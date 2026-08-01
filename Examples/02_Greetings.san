@@ -1,0 +1,5 @@
+// 02: Asking for text input
+वद "What is your name?"
+पृच्छ नाम-मध्ये
+
+वद "Namaste " नाम "! How are you today?"

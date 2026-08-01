@@ -1,0 +1,21 @@
+// 28: Median of Three Numbers
+वद "Enter A:"
+पृच्छ अ-मध्ये
+वद "Enter B:"
+पृच्छ ब-मध्ये
+वद "Enter C:"
+पृच्छ स-मध्ये
+
+यदि ( अ > ब ) {
+    यदि ( ब > स ) { वद "Median is B: " ब }
+    तर्हि {
+        यदि ( अ > स ) { वद "Median is C: " स }
+        तर्हि { वद "Median is A: " अ }
+    }
+} तर्हि {
+    यदि ( अ > स ) { वद "Median is A: " अ }
+    तर्हि {
+        यदि ( ब > स ) { वद "Median is C: " स }
+        तर्हि { वद "Median is B: " ब }
+    }
+}

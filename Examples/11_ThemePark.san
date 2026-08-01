@@ -1,0 +1,15 @@
+// 11: Theme Park Ticket Pricing
+वद "Welcome to the Ticket Machine."
+पृच्छ आयु-मध्ये
+
+यदि ( आयु < ५ ) {
+    वद "Ticket is FREE for kids under 5!"
+} तर्हि {
+    
+    यदि ( आयु < १८ ) {
+        वद "Ticket is 50 Rupees for students."
+    } तर्हि {
+        वद "Ticket is 100 Rupees for adults."
+    }
+    
+}

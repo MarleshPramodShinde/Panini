@@ -1,0 +1,11 @@
+// 30: Single Digit to String Switcher
+वद "Enter a single digit (0-5):"
+पृच्छ अंक-मध्ये
+
+यदि ( अंक == ० ) { वद "Zero" }
+यदि ( अंक == १ ) { वद "One" }
+यदि ( अंक == २ ) { वद "Two" }
+यदि ( अंक == ३ ) { वद "Three" }
+यदि ( अंक == ४ ) { वद "Four" }
+यदि ( अंक == ५ ) { वद "Five" }
+यदि ( अंक > ५ ) { वद "Number too big for this demo!" }

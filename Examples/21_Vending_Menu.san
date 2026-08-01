@@ -1,0 +1,19 @@
+// 21: Interactive Vending Machine Menu
+वद "Select an item: 1 for Water, 2 for Chips, 3 for Chocolate"
+पृच्छ चयन-मध्ये
+
+यदि ( चयन == १ ) {
+    वद "Water selected. Price: 20 Rs."
+}
+यदि ( चयन == २ ) {
+    वद "Chips selected. Price: 30 Rs."
+}
+यदि ( चयन == ३ ) {
+    वद "Chocolate selected. Price: 50 Rs."
+}
+यदि ( चयन < १ ) {
+    वद "Invalid selection."
+}
+यदि ( चयन > ३ ) {
+    वद "Invalid selection."
+}

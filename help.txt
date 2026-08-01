@@ -1,6 +1,68 @@
---
 
-# PANINI PROGRAMMING LANGUAGE
+# PANINI PROGRAMMING LANGUAGE (VERSION 11)
+### Official User Guide & Technical Reference Manual
+
+Welcome to **Panini V11**, an educational programming language and environment engineered to make learning computer logic intuitive, stress-free, and accessible. Named after the ancient grammarian Pāṇini, the language utilizes a **Kāraka (Suffix-Based) Engine**.
+
+---
+
+## 1. Quick Keyboard Shortcuts (Hotkeys)
+
+| Key Combination | Action | Description |
+| :--- | :--- | :--- |
+| **`F1`** | **Help Manual** | Opens this documentation guide. |
+| **`F2`** | **Save File** | Saves your current `.san` code file. |
+| **`F3`** | **Open File** | Opens an existing `.san` program. |
+| **`Alt + F9`** | **Compile Code** | Validates code structure and displays the compilation status. |
+| **`Ctrl + F9`** | **Run Program** | Executes your code and displays output in the bottom terminal. |
+| **`Alt + X`** | **Exit** | Closes the Panini IDE application. |
+
+---
+
+## 2. IDE Interface & Developer Tools
+
+### A. Auto-Translate (Keyword Keylogger)
+You do not need to switch keyboard layouts or learn Sanskrit typing to write code. Type standard English or C++ equivalents, and pressing **Space**, **Enter**, **`(`**, or **`{`** automatically transforms them into Panini keywords:
+
+* `print`, `printf`, `cout` $\rightarrow$ **`वद`**
+* `scan`, `scanf`, `cin`, `ask` $\rightarrow$ **`पृच्छ`**
+* `store` $\rightarrow$ **`स्थापय`**
+* `add`, `plus` $\rightarrow$ **`संयोजय`**
+* `sub`, `minus` $\rightarrow$ **`न्यूनय`**
+* `mul`, `multiply` $\rightarrow$ **`गुणय`**
+* `div`, `divide` $\rightarrow$ **`विभज`**
+* `if` $\rightarrow$ **`यदि`**
+* `else` $\rightarrow$ **`तर्हि`**
+* `while` $\rightarrow$ **`यावत्`**
+
+### B. Quick Insert Toolbar
+Located right above the main editor, this bar offers instant clickable buttons for all core keywords and the mandatory **`-मध्ये`** suffix. You can toggle this bar on or off from the menu bar via **`Edit -> Show/Hide Shortcut Toolbar`**.
+
+### C. On-Screen Devanagari Keyboard
+Clicking **`⌨ Devanagari Keyboard`** on the top menu bar launches a floating virtual keyboard. It includes vowels, consonants, matras, Devanagari numbers, and one-click Panini language blocks.
+
+### D. AI Magic Wand (C/C++ Transpiler)
+Click **`🪄 Magic Wand`** in the top menu bar to work with standard C or C++ school code:
+1. **`▶ Run Code (G++)`**: Compiles and executes native C/C++ code directly inside a built-in terminal.
+2. **`✨ Convert to Panini`**: Strips out `#include`, `int main()`, semicolons, and boilerplates, rewriting the core computational logic directly into Panini code.
+
+---
+
+## 3. Core Syntax Rules
+
+### A. The Memory Suffix (`-मध्ये`)
+Panini tracks variable memory destinations using the suffix **`-मध्ये`** ("In / Into"). Whenever you store data, perform mathematical operations, or prompt for user input, the target variable **must** end with `-मध्ये`.
+
+* **Valid Targets:** `क-मध्ये`, `total-मध्ये`, `age-मध्ये`
+
+### B. Flexible Word Order
+Because the `-मध्ये` suffix explicitly identifies the destination variable, standard single-line commands are order-independent:
+
+```sanskrit
+५ क-मध्ये स्थापय       // Value -> Destination -> Action
+स्थापय ५ क-मध्ये       // Action -> Value -> Destination
+क-मध्ये ५ स्थापय       // Destination -> Value -> Action
+
 
 ### Official Language Reference & Documentation (Version 10)
 

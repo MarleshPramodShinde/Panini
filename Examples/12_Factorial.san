@@ -1,0 +1,10 @@
+// 12: Factorial Calculator
+वद "Enter a number to find its factorial:"
+पृच्छ अंक-मध्ये
+१ परिणाम-मध्ये स्थापय
+
+यावत् ( अंक > ० ) {
+    परिणाम अंक गुणय परिणाम-मध्ये
+    अंक १ न्यूनय अंक-मध्ये
+}
+वद "The Factorial is: " परिणाम

@@ -1,0 +1,9 @@
+// 04: Shopping Change Calculator
+वद "You have 100 Rupees."
+१०० धन-मध्ये स्थापय
+
+वद "How much does the chocolate cost?"
+पृच्छ मूल्य-मध्ये
+
+धन मूल्य न्यूनय शेष-मध्ये
+वद "Your change is: " शेष " Rupees."

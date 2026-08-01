@@ -1,0 +1,53 @@
+// ==========================================
+// PANINI ARCHITECTURE STRESS TEST
+// Prime Number Generator & Multi-Layer Logic
+// ==========================================
+
+वद "=== PANINI STRESS TEST: PRIME FINDER ==="
+वद "Enter upper limit to find prime numbers:"
+पृच्छ सीमा-मध्ये
+
+२ वर्तमान-मध्ये स्थापय
+० कुल_प्रधान-मध्ये स्थापय
+
+वद "Calculating primes up to limit..."
+
+// Outer Loop: Iterates through numbers from 2 up to 'सीमा'
+यावत् ( वर्तमान < सीमा ) {
+    
+    // Assume current number is prime (1 = True, 0 = False)
+    १ अस्ति_प्रधान-मध्ये स्थापय
+    २ विभाजक-मध्ये स्थापय
+
+    // Inner Loop: Check for factors from 2 up to (वर्तमान / 2)
+    // We compute halfway mark to save execution cycles
+    वर्तमान २ विभज आधा_वर्तमान-मध्ये
+
+    यावत् ( विभाजक <= आधा_वर्तमान ) {
+        
+        // Advanced Math Check: (वर्तमान / विभाजक) * विभाजक == वर्तमान
+        वर्तमान विभाजक विभज भाग-मध्ये
+        भाग विभाजक गुणय गुणन-मध्ये
+
+        यदि ( वर्तमान == गुणन ) {
+            // Factor found! It is NOT a prime number.
+            ० अस्ति_प्रधान-मध्ये स्थापय
+            // Force inner loop to break by setting divisor higher than limit
+            वर्तमान विभाजक-मध्ये स्थापय 
+        }
+
+        विभाजक १ संयोजय विभाजक-मध्ये
+    }
+
+    // If it survived the inner loop as prime, print and count it
+    यदि ( अस्ति_प्रधान == १ ) {
+        वद "Found Prime: " वर्तमान
+        कुल_प्रधान १ संयोजय कुल_प्रधान-मध्ये
+    }
+
+    वर्तमान १ संयोजय वर्तमान-मध्ये
+}
+
+वद "=========================================="
+वद "Stress test complete!"
+वद "Total prime numbers found: " कुल_प्रधान

@@ -1,0 +1,10 @@
+// 09: Rocket Launch Countdown
+१० समय-मध्ये स्थापय
+वद "Starting Rocket Countdown..."
+
+यावत् ( समय > ० ) {
+    वद समय
+    समय १ न्यूनय समय-मध्ये
+}
+
+वद "Blastoff!!!"

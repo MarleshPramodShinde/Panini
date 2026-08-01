@@ -1,0 +1,13 @@
+// 19: Astronomical Leap Year Checker
+वद "Enter a year to check if it is a Leap Year:"
+पृच्छ वर्ष-मध्ये
+
+// Modulo Trick: If (Year / 4) * 4 == Year, it is divisible by 4!
+वर्ष ४ विभज भाग-मध्ये 
+भाग ४ गुणय जांच-मध्ये
+
+यदि ( वर्ष == जांच ) {
+    वद वर्ष " is a Leap Year!"
+} तर्हि {
+    वद वर्ष " is not a Leap Year."
+}

@@ -1,0 +1,24 @@
+// 15: Daily Calorie Limit Checker
+२००० लक्ष्य-मध्ये स्थापय
+० खाया-मध्ये स्थापय
+१ चालू-मध्ये स्थापय
+
+वद "Your daily goal is 2000 calories."
+
+यावत् ( चालू == १ ) {
+    वद "Enter meal calories (or type 0 to stop):"
+    पृच्छ भोजन-मध्ये
+    
+    यदि ( भोजन == ० ) {
+        ० चालू-मध्ये स्थापय
+    } तर्हि {
+        खाया भोजन संयोजय खाया-मध्ये
+        वद "Total consumed so far: " खाया
+    }
+}
+
+यदि ( खाया > लक्ष्य ) {
+    वद "Warning! You exceeded your daily calorie goal."
+} तर्हि {
+    वद "Great job staying healthy!"
+}

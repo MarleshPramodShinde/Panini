@@ -1,0 +1,22 @@
+// 18: Psychometric Aptitude Quiz
+० अंक-मध्ये स्थापय
+
+वद "Question 1: What is 12 multiplied by 12?"
+पृच्छ उत्तर१-मध्ये
+यदि ( उत्तर१ == १४४ ) {
+    अंक १ संयोजय अंक-मध्ये
+    वद "Correct!"
+} तर्हि { 
+    वद "Wrong." 
+}
+
+वद "Question 2: What is 100 divided by 4?"
+पृच्छ उत्तर२-मध्ये
+यदि ( उत्तर२ == २५ ) {
+    अंक १ संयोजय अंक-मध्ये
+    वद "Correct!"
+} तर्हि { 
+    वद "Wrong." 
+}
+
+वद "Test complete. Your Aptitude Score is: " अंक "/ 2"

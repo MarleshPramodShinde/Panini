@@ -1,0 +1,12 @@
+// 40: The Safety Governor Test
+वद "Attempting to run an infinite loop..."
+वद "The compiler should forcefully stop at 2000 steps."
+१ चालू-मध्ये स्थापय
+० गिनती-मध्ये स्थापय
+
+यावत् ( चालू == १ ) {
+    गिनती १ संयोजय गिनती-मध्ये
+    // Intentionally never turning 'चालू' to 0
+}
+वद "Governor activated! Loop stopped safely."
+वद "Total steps executed: " गिनती

@@ -1,0 +1,17 @@
+// 16: Resort Booking with Group Discount
+वद "Welcome to the Resort Booking System."
+वद "Enter number of guests:"
+पृच्छ अतिथि-मध्ये
+१५०० किराया-मध्ये स्थापय // 1500 per person
+
+अतिथि किराया गुणय कुल_बिल-मध्ये
+
+यदि ( अतिथि > ५ ) {
+    वद "Group of more than 5! Applying 10 percent discount."
+    कुल_बिल १० गुणय छूट_अंश-मध्ये
+    छूट_अंश १०० विभज छूट-मध्ये
+    कुल_बिल छूट न्यूनय अंतिम_बिल-मध्ये
+    वद "Your final discounted bill is: " अंतिम_बिल
+} तर्हि {
+    वद "Your total bill is: " कुल_बिल
+}

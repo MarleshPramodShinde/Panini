@@ -1,0 +1,7 @@
+// 03: Simple Addition Calculator
+वद "Enter two numbers to add:"
+पृच्छ पहला-मध्ये
+पृच्छ दूसरा-मध्ये
+
+पहला दूसरा संयोजय उत्तर-मध्ये
+वद "The total is: " उत्तर

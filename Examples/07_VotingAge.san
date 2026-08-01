@@ -1,0 +1,9 @@
+// 07: Voting Age Checker
+वद "Check your voting eligibility:"
+पृच्छ आयु-मध्ये
+
+यदि ( आयु > १७ ) {
+    वद "Congratulations, you can vote!"
+} तर्हि {
+    वद "Sorry, you are too young to vote."
+}

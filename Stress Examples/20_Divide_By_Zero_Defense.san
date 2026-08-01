@@ -1,0 +1,10 @@
+// 41: Division by Zero Test
+वद "Attempting to divide 100 by 0..."
+१०० शून्य विभज उत्तर-मध्ये
+वद "Output: " उत्तर
+
+वद "Attempting to divide variables..."
+५ क-मध्ये स्थापय
+० ख-मध्ये स्थापय
+क ख विभज उत्तर२-मध्ये
+वद "Output: " उत्तर२

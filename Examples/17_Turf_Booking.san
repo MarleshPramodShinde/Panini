@@ -1,0 +1,14 @@
+// 17: Sports Turf Hourly Booking
+वद "Welcome to the Sports Complex Turf Booking."
+वद "Enter number of hours played:"
+पृच्छ घंटे-मध्ये
+१२०० दर-मध्ये स्थापय 
+
+घंटे दर गुणय कीमत-मध्ये
+            
+यदि ( घंटे > ३ ) {
+    वद "Long session bonus! Removing 500 Rupees."
+    कीमत ५०० न्यूनय कीमत-मध्ये
+}
+            
+वद "Please pay: " कीमत " Rupees at the counter."
