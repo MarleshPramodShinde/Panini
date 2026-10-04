@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panini V11 - Language Reference Manual</title>
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; background: #1E1E1E; color: #D4D4D4; margin: 0; padding: 20px; }
+.container { max-width: 1000px; margin: 20px auto; background: #252526; padding: 35px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 1px solid #333; }
+h1, h2, h3 { color: #4EC9B0; }
+h1 { border-bottom: 2px solid #007ACC; padding-bottom: 10px; }
+h2 { margin-top: 28px; color: #9CDCFE; border-bottom: 1px solid #444; padding-bottom: 6px; }
+pre { background: #111111; color: #DCDCAA; padding: 14px; border-radius: 6px; overflow-x: auto; border: 1px solid #333; font-family: 'Consolas', monospace; font-size: 14px; }
+code { font-family: 'Consolas', monospace; background: #333; padding: 2px 6px; border-radius: 4px; color: #CE9178; }
+table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+th, td { border: 1px solid #444; padding: 10px; text-align: left; }
+th { background: #333; color: #4EC9B0; }
+tr:nth-child(even) { background: #2A2A2D; }
+.badge { background: #007ACC; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Panini V11 Technical Reference Manual</h1>
+<p>Welcome to <strong>Panini</strong>, a Sanskrit-based programming language built on an AST Kāraka Engine. Panini allows beginners and advanced developers to write structured, modular code using natural semantic cases.</p>
+
+<h2>1. Keyboard Shortcuts & Autocomplete</h2>
+<ul>
+  <li><strong>IntelliSense Autocomplete:</strong> Type letters like <code>va</code>, <code>ya</code>, or Sanskrit roots to open the auto-suggestion dropdown. Hit <strong>Enter</strong> to complete.</li>
+  <li><strong>Run Code:</strong> Press <code>Ctrl + Enter</code> to compile and execute instantly.</li>
+  <li><strong>Smart Keylogger:</strong> Typing English keywords followed by a space automatically converts them:
+    <ul>
+      <li><code>print</code> &rarr; <code>वद</code></li>
+      <li><code>scan</code> / <code>ask</code> / <code>pricha</code> &rarr; <code>पृच्छ</code></li>
+      <li><code>if</code> &rarr; <code>यदि</code> | <code>else</code> &rarr; <code>तर्हि</code></li>
+      <li><code>func</code> / <code>karya</code> &rarr; <code>कार्य</code></li>
+      <li><code>list</code> / <code>array</code> &rarr; <code>सूची[ ]</code></li>
+    </ul>
+  </li>
+</ul>
+
+<h2>2. The Kāraka Destination Rule (<code>-मध्ये</code>)</h2>
+<p>Every memory assignment, mathematical result, or user input requires a target variable marked with the <strong><code>-मध्ये</code></strong> ("into") suffix.</p>
+<pre>
+१० आयु-मध्ये स्थापय      // Assigns 10 into 'आयु'
+पृच्छ नाम-मध्ये          // Takes user input and saves into 'नाम'
+</pre>
+
+<h2>3. Mathematical Operations</h2>
+<p>Math operations use a postfix structure: <code>[Val1] [Val2] [Operator] [Target]-मध्ये</code></p>
+<table>
+  <tr><th>Operation</th><th>Command</th><th>Example</th></tr>
+  <tr><td>Addition (+)</td><td><code>संयोजय</code></td><td><code>५ १० संयोजय योग-मध्ये</code></td></tr>
+  <tr><td>Subtraction (-)</td><td><code>न्यूनय</code></td><td><code>२० ५ न्यूनय शेष-मध्ये</code></td></tr>
+  <tr><td>Multiplication (*)</td><td><code>गुणय</code></td><td><code>४ ६ गुणय गुणन-मध्ये</code></td></tr>
+  <tr><td>Division (/)</td><td><code>विभज</code></td><td><code>१०० ५ विभज भाग-मध्ये</code></td></tr>
+  <tr><td>Remainder / Modulo (%)</td><td><code>शेष</code></td><td><code>१० ३ शेष उत्तर-मध्ये</code></td></tr>
+  <tr><td>Exponent / Power (^)</td><td><code>घात</code></td><td><code>२ ३ घात उत्तर-मध्ये</code></td></tr>
+</table>
+
+<h2>4. Conditionals & Loops</h2>
+<pre>
+// If-Else Block
+यदि ( अंक &gt; १० ) {
+    वद "Greater than 10"
+} तर्हि {
+    वद "10 or smaller"
+}
+
+// While Loop
+यावत् ( चक्र &gt; ० ) {
+    वद चक्र
+    चक्र १ न्यूनय चक्र-मध्ये
+}
+
+// For Loop (कृते)
+कृते ( ० i-मध्ये स्थापय ; i &lt; ५ ; i १ संयोजय i-मध्ये ) {
+    वद i
+}
+</pre>
+
+<h2>5. Arrays & Collections <span class="badge">V11 Feature</span></h2>
+<p>Panini supports standard indexed arrays with 0-based bracket access.</p>
+<pre>
+// 1. Initializing an Array
+[ १०, २०, ३०, ४० ] संख्या-मध्ये स्थापय
+
+// 2. Reading from an Index
+वद संख्या[०]            // Outputs 10
+
+// 3. Writing to an Index
+९९ संख्या[१]-मध्ये स्थापय
+वद संख्या[१]            // Outputs 99
+</pre>
+
+<h2>6. User-Defined Functions <span class="badge">V11 Feature</span></h2>
+<p>Functions are declared with <code>कार्य</code> and return values with <code>प्रतिफल</code>.</p>
+<pre>
+// Declare a function with parameters
+कार्य वर्ग ( संख्या ) {
+    संख्या संख्या गुणय उत्तर-मध्ये
+    प्रतिफल उत्तर
+}
+
+// Call the function and store the returned value
+वर्ग ( ५ ) परिणाम-मध्ये स्थापय
+वद "Result: " परिणाम   // Outputs 25
+</pre>
+
+</div>
+</body>
+</html>

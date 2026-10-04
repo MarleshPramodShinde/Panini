@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panini V11 - Professional Web IDE</title>
+	<!-- PWA & Mobile Configuration -->
+    <link rel="manifest" href="paninimanifest.json">
+    <meta name="theme-color" content="#0000AA">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="paniniicon-192.png">
+    
+    <!-- LZ-String for Shareable URLs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #1E1E1E; /* VS Code Default Dark */
+            --bg-sidebar: #252526;
+            --bg-terminal: #111111;
+            --toolbar: #333333;
+            --menu-bar: #2D2D30;
+            --text-light: #D4D4D4;
+            --menu-text: #CCCCCC;
+            --accent: #007ACC;
+            --btn-bg: #444444;
+            --btn-text: #FFFFFF;
+        }
+
+        /* Ancient Manuscript (Light Mode) */
+        body.theme-ancient {
+            --bg-dark: #FDF6E3; /* Aged Parchment */
+            --bg-sidebar: #F5E6C8;
+            --bg-terminal: #EFE4CE;
+            --toolbar: #E8D8B8;
+            --menu-bar: #DCCFA6;
+            --text-light: #3E2723; /* Dark Ink */
+            --menu-text: #3E2723;
+            --accent: #D35400; /* Terracotta Red */
+            --btn-bg: #E8D8B8;
+            --btn-text: #3E2723;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background: var(--bg-dark); display: flex; flex-direction: column; height: 100vh; width: 100vw; overflow: hidden; color: var(--text-light); }
+        
+		
+        /* IntelliSense Dropdown Styling */
+        .monaco-editor .suggest-widget {
+            border: 1px solid var(--menu-bar) !important;
+            background-color: var(--bg-sidebar) !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4) !important;
+        }
+        .monaco-editor .suggest-widget .monaco-list .monaco-list-row {
+            color: var(--text-light) !important;
+        }
+        .monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused {
+            background-color: var(--accent) !important;
+            color: #FFF !important;
+        }
+        /* Fix text contrast in Ancient mode */
+        body.theme-ancient .monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused {
+            color: white !important;
+        }
+		
+		
+		/* Top Navigation & Menus */
+.menu-bar { background: var(--menu-bar); padding: 5px 10px; display: flex; gap: 10px; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; border-bottom: 2px solid #999; flex-wrap: wrap; align-items: center; color: var(--menu-text); flex-shrink: 0; }        .menu-item { cursor: pointer; padding: 4px 8px; border-radius: 3px; user-select: none; text-decoration: none; color: black; display: flex; align-items: center; gap: 5px; }
+        .menu-item:hover { background: #bbb; }
+        .menu-item.primary { background: #4CAF50; color: white; }
+        .menu-item.magic { background: #9C27B0; color: white; }
+        .menu-item.github { background: #24292e; color: white; }
+        
+        .toolbar { background: var(--toolbar); padding: 8px; display: flex; gap: 6px; overflow-x: scroll; white-space: nowrap; border-bottom: 2px solid #999; flex-shrink: 0; }
+.toolbar button { font-weight: bold; padding: 4px 10px; background: var(--btn-bg); color: var(--btn-text); border: 1px solid #777; cursor: pointer; border-radius: 4px; box-shadow: 1px 1px 2px rgba(0,0,0,0.2); }        .toolbar button:active { box-shadow: inset 1px 1px 2px rgba(0,0,0,0.3); }
+
+        /* Layout */
+        .app-body { display: flex; flex: 1; position: relative; min-height: 0; }
+        
+        /* File Explorer Sidebar (IndexedDB) */
+        .sidebar { width: 250px; background: var(--bg-sidebar); border-right: 2px solid #555; display: flex; flex-direction: column; transition: transform 0.3s ease; min-height: 0; }
+        .sidebar.hidden { display: none; }
+        .file-list { flex: 1; overflow-y: auto; padding: 10px; list-style: none; }
+        .file-item { padding: 6px 8px; cursor: pointer; border-radius: 4px; font-size: 14px; color: #ccc; margin-bottom: 4px; word-break: break-all; }
+        .file-item:hover { background: #333; color: white; }
+        .file-item.active { background: #0055ff; color: white; }
+
+        /* Workspace */
+       .workspace { display: flex; flex: 1; flex-direction: column; width: 100%; height: 100%; }
+		@media (min-width: 768px), (orientation: landscape) { .workspace { flex-direction: row; } }
+        
+        .pane { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            border: 1px solid #555; 
+            position: relative; 
+            min-width: 0;  /* Forces horizontal shrinking */
+            min-height: 0; /* Forces vertical shrinking on mobile */
+            overflow: hidden; 
+        }
+        .pane-header { background: var(--menu-bar); color: black; font-family: 'Courier New', monospace; font-weight: bold; padding: 3px 10px; font-size: 12px; display: flex; justify-content: space-between; }
+        
+        /* Monaco Editor Container */
+      #editor-container { 
+            flex: 1; 
+            background: var(--bg-dark); 
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        /* Terminal */
+        .terminal { flex: 1; background: var(--bg-terminal); color: #00FF00; padding: 10px; font-family: 'Consolas', monospace; font-size: 15px; overflow-y: scroll; white-space: pre-wrap; }
+        .terminal .error { color: #FF5555; }
+
+        /* Modals */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: #2B2B2B; color: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 650px; display: flex; flex-direction: column; gap: 10px; }
+        .modal-content textarea { width: 100%; height: 150px; background: #1E1E1E; color: white; border: 1px solid #555; padding: 10px; font-family: monospace; }
+        .modal-btn-row { display: flex; gap: 10px; justify-content: flex-end; }
+        .modal-btn { padding: 8px 15px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; }
+		
+		/* Sidebar header and Close Button */
+        .sidebar-header { background: #333; padding: 10px; font-weight: bold; font-size: 14px; border-bottom: 1px solid #555; display: flex; justify-content: space-between; align-items: center; }
+        .sidebar-header .actions { display: flex; gap: 5px; }
+        .sidebar-header button { background: var(--accent); border: none; color: white; cursor: pointer; padding: 4px 8px; border-radius: 3px; font-weight: bold; }
+        .sidebar-header button.close-btn { background: #f44336; }
+
+        /* Category Headers for Examples */
+        .category-header { background: #444; color: #FFB86C; padding: 5px 10px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-top: 10px; }
+	/* Portrait Mode Warning Overlay */
+        #portrait-warning { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); color: white; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+        #portrait-warning svg { width: 60px; height: 60px; margin-bottom: 20px; animation: rotatePhone 2s infinite ease-in-out; }
+        @keyframes rotatePhone { 0% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } 100% { transform: rotate(-90deg); } }
+        
+        @media screen and (max-width: 768px) and (orientation: portrait) {
+            #portrait-warning { display: flex; }
+            .app-body, .menu-bar, .toolbar { display: none !important; }
+        }
+	
+	/* =========================================
+           CUSTOM SCROLLBARS (FORCES VISIBILITY ON MOBILE)
+           ========================================= */
+        
+        /* Firefox Support */
+        * { scrollbar-width: auto; scrollbar-color: #555555 #2B2B2B; }
+
+        /* Chrome, Edge, Safari, Android WebKit Support */
+        ::-webkit-scrollbar {
+            width: 14px;  /* Width of vertical scrollbar */
+            height: 14px; /* Height of horizontal scrollbar */
+            background: #2B2B2B; /* Background of the scrollbar track */
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1E1E1E; /* Dark track matching sidebar */
+            border-left: 1px solid #444;
+            border-top: 1px solid #444;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background-color: #555555; /* The draggable handle */
+            border-radius: 6px;
+            border: 3px solid #1E1E1E; /* Creates padding around the thumb */
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #777777; /* Lighter on hover/touch */
+        }
+        
+        ::-webkit-scrollbar-corner {
+            background: #1E1E1E; /* Where H and V scrollbars meet */
+        }
+	
+	/* =========================================
+           DRAGGABLE SPLIT PANE RESIZER
+           ========================================= */
+        .resizer {
+            background-color: #333;
+            width: 8px; /* Desktop width */
+            cursor: col-resize;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            box-shadow: inset 1px 0 2px rgba(0,0,0,0.5), inset -1px 0 2px rgba(255,255,255,0.1);
+        }
+        .resizer::after {
+            content: "⋮";
+            color: #888;
+            font-size: 18px;
+        }
+        /* Mobile Portrait Resizer Adaptation */
+        @media screen and (max-width: 767px) and (orientation: portrait) {
+            .resizer { width: 100%; height: 8px; cursor: row-resize; }
+            .resizer::after { content: "⋯"; }
+        }
+
+        /* =========================================
+           FORCE NATIVE SCROLLBARS (TERMINAL/SIDEBAR)
+           ========================================= */
+        .terminal, .file-list, .toolbar { overflow: scroll !important; }
+        ::-webkit-scrollbar { width: 14px !important; height: 14px !important; background: #2B2B2B !important; }
+        ::-webkit-scrollbar-track { background: #1E1E1E !important; border-left: 1px solid #444; border-top: 1px solid #444; }
+        ::-webkit-scrollbar-thumb { background-color: #555555 !important; border-radius: 6px !important; border: 3px solid #1E1E1E !important; }
+        ::-webkit-scrollbar-thumb:hover { background-color: #777777 !important; }
+        ::-webkit-scrollbar-corner { background: #1E1E1E !important; }
+	
+	</style>
+</head>
+<body>
+<!-- Portrait Warning -->
+    <div id="portrait-warning">
+        <svg fill="white" viewBox="0 0 24 24"><path d="M16 1H8C6.34 1 5 2.34 5 4v16c0 1.66 1.34 3 3 3h8c1.66 0 3-1.34 3-3V4c0-1.66-1.34-3-3-3zm1 18H7V5h10v14z"/></svg>
+        <h2>Please Rotate Your Device</h2>
+        <p>Panini IDE requires landscape mode for the best programming experience.</p>
+    </div>
+
+    <!-- Main Menu -->
+<!-- Main Menu -->
+    <div class="menu-bar">
+        <!-- NEW: Hidden File Uploader -->
+        <input type="file" id="fileUploader" style="display: none;" accept=".san,.txt,.cpp,.c" onchange="openFileFromDisk(event)">
+
+        <!-- NEW: Standard File Operations -->
+        <div class="menu-item" style="background: #607D8B; color: white;" onclick="createNewFile()">📄 New</div>
+        <div class="menu-item" style="background: #00BCD4; color: white;" onclick="document.getElementById('fileUploader').click()">📂 Open</div>
+        <div class="menu-item" style="background: #FF5722; color: white;" onclick="downloadCurrentFile()">💾 Save (PC)</div>
+
+        <div class="menu-item primary" onclick="runCode()">▶ Run (Ctrl+Enter)</div>
+		
+		<!-- Theme Toggle -->
+        <div class="menu-item" style="background: var(--accent); color: white;" onclick="toggleTheme()" id="themeBtn">🌙 Dark Mode</div>
+        
+        <!-- Buttons for Database Loading -->
+        <div class="menu-item" onclick="loadExamples()" style="background: #FF9800; color: black;">📚 Examples</div>
+        <div class="menu-item" onclick="loadHistory()" style="background: #4CAF50; color: white;">🕒 History</div>
+        
+        <!-- Magic & AI -->
+        <div class="menu-item magic" onclick="openWand()">🪄 Magic Wand</div>
+        <div class="menu-item" style="background: #E91E63; color: white;" onclick="openAIModal()">🤖 AI Assistant</div>
+        <div class="menu-item" onclick="generateShareLink()">🔗 Share</div>
+        
+        <!-- External Navigation -->
+        <a href="readme.html" target="_blank" class="menu-item">📄 Readme</a>
+        <a href="help.html" target="_blank" class="menu-item">❓ Help</a>
+        <a href="https://github.com/MarleshPramodShinde/Panini" target="_blank" class="menu-item github">Windows App</a>
+    </div>
+
+    <!-- Shortcut Toolbar -->
+    <!-- Shortcut Toolbar -->
+    <div class="toolbar" id="toolbar">
+        <button onclick="undoLastAction()" style="background: #ffcc80; border-color: #ff9800; color: #b26500;">↩ Undo</button>
+        <button onclick="insertAtCursor('वद ')">वद (Print)</button>
+        <button onclick="insertAtCursor('पृच्छ ')">पृच्छ (Scan)</button>
+        <button onclick="insertAtCursor('स्थापय ')">स्थापय (Assign)</button>
+        <button onclick="insertAtCursor('संयोजय ')">संयोजय (+)</button>
+        <button onclick="insertAtCursor('न्यूनय ')">न्यूनय (-)</button>
+        <button onclick="insertAtCursor('गुणय ')">गुणय (*)</button>
+        <button onclick="insertAtCursor('विभज ')">विभज (/)</button>
+        <button onclick="insertAtCursor('यदि ')">यदि (If)</button>
+        <button onclick="insertAtCursor('तर्हि ')">तर्हि (Else)</button>
+        <button onclick="insertAtCursor('यावत् ')">यावत् (While)</button>
+        <button onclick="insertAtCursor('कुरु ')">कुरु (Do)</button>
+        <button onclick="insertAtCursor('कृते ')">कृते (For)</button>
+        <button onclick="insertAtCursor('कार्य ')">कार्य (Functions)</button>
+        <button onclick="insertAtCursor('प्रतिफल ')">प्रतिफल (Return)</button>
+        <button onclick="insertAtCursor('सूची[ ]')">सूची (Array)</button>
+        <button onclick="insertAtCursor('-मध्ये ')">-मध्ये</button>
+    </div>
+
+    <!-- Application Body -->
+    <div class="app-body">
+        
+        <!-- Local History / Server Examples Sidebar -->
+        <div class="sidebar hidden" id="sidebar">
+            <div class="sidebar-header">
+                <span id="sidebar-title">Local History</span>
+                <div class="actions">
+                    <button onclick="createNewFile()" id="new-file-btn">+ New</button>
+                    <button class="close-btn" onclick="toggleSidebar(false)">✖</button>
+                </div>
+            </div>
+            <div class="file-list" id="fileList"></div>
+            <div style="padding: 10px;" id="save-btn-container">
+                <button style="width:100%; padding: 6px; font-weight:bold; background: #2196F3; color: white; border: none; cursor: pointer;" onclick="saveCurrentFile()">💾 Save to History</button>
+            </div>
+        </div>
+
+        <!-- Editor & Terminal -->
+		<div class="workspace" id="workspace">
+            <div class="pane" id="editor-pane" style="flex: 0 0 60%;">
+                <div class="pane-header">
+                    <span id="currentFilename">MAIN.SAN</span>
+                </div>
+                <div id="editor-container"></div>
+            </div>
+            
+            <!-- THE DRAGGABLE HANDLE -->
+            <div class="resizer" id="drag-resizer"></div>
+            
+            <div class="pane" id="terminal-pane" style="flex: 1 1 0%;">
+                <div class="pane-header">MESSAGE / OUTPUT</div>
+                <div class="terminal" id="terminal">System Ready...\n</div>
+            </div>
+        </div>
+    </div>
+
+<!-- Magic Wand Modal -->
+    <div class="modal" id="wandModal">
+        <div class="modal-content">
+            <h3>🪄 C/C++ to Sanskrit Transpiler</h3>
+            <textarea id="cppCode">#include <iostream>
+using namespace std;
+int main() {
+    int age = 20;
+    if (age > 18) {
+        cout << "Adult";
+    }
+}</textarea>
+            
+            <!-- Restored C++ Output Terminal -->
+            <div class="terminal" id="cppOutput" style="height: 120px; padding: 10px; font-size: 14px; border: 1px solid #555;">Ready to compile C++...</div>
+            
+            <div class="modal-btn-row">
+                <!-- Restored Run Button -->
+                <button class="modal-btn" style="background:#2196F3; color:white;" onclick="compileCPP()">▶ Run C++ (G++)</button>
+                <button class="modal-btn" style="background:#9C27B0; color:white;" onclick="transpileCode()">✨ Convert to Panini</button>
+                <button class="modal-btn" style="background:#f44336; color:white;" onclick="document.getElementById('wandModal').style.display='none'">Close</button>
+            </div>
+        </div>
+    </div>
+	
+	<!-- AI Assistant Modal -->
+    <div class="modal" id="aiModal">
+        <div class="modal-content">
+            <h3>🤖 Panini AI Assistant</h3>
+            <p style="font-size: 13px; color: #ccc;">Describe the program you want to write (e.g., "Find if a number is even or odd")</p>
+            
+            <textarea id="aiPrompt" style="height: 80px; padding: 10px; font-family: sans-serif; font-size: 14px;" placeholder="Type your logic here..."></textarea>
+            
+            <div class="terminal" id="aiOutput" style="display:none; height: 60px; padding: 10px; font-size: 14px; border: 1px solid #555;"></div>
+            
+            <div class="modal-btn-row">
+                <button class="modal-btn" style="background:#E91E63; color:white;" onclick="generateAICode()" id="aiRunBtn">✨ Generate Code</button>
+                <button class="modal-btn" style="background:#f44336; color:white;" onclick="document.getElementById('aiModal').style.display='none'">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monaco Editor Loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js"></script>
+    
+    <script>
+        let editorInstance;
+        let currentOpenFilename = "main.san";
+        const term = document.getElementById('terminal');
+
+        // ==========================================
+        // 1. DATABASE & SIDEBAR LOGIC
+        // ==========================================
+        const dbName = "PaniniHistory";
+        const storeName = "scripts";
+        let db;
+
+        // Open Local IndexedDB for History
+        const request = indexedDB.open(dbName, 1);
+        request.onupgradeneeded = (e) => {
+            db = e.target.result;
+            if (!db.objectStoreNames.contains(storeName)) {
+                db.createObjectStore(storeName, { keyPath: "name" });
+            }
+        };
+        request.onsuccess = (e) => { db = e.target.result; };
+
+        function toggleSidebar(forceShow) {
+            const sidebar = document.getElementById('sidebar');
+            if (forceShow === true) sidebar.classList.remove('hidden');
+            else if (forceShow === false) sidebar.classList.add('hidden');
+            else sidebar.classList.toggle('hidden');
+        }
+
+        // ---- LOAD LOCAL HISTORY ----
+        function loadHistory() {
+            document.getElementById('sidebar-title').innerText = "Local History";
+            document.getElementById('new-file-btn').style.display = "inline-block";
+            document.getElementById('save-btn-container').style.display = "block";
+            
+            const list = document.getElementById('fileList');
+            list.innerHTML = '';
+            
+            const tx = db.transaction(storeName, "readonly");
+            tx.objectStore(storeName).openCursor().onsuccess = (e) => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    const li = document.createElement('div');
+                    li.className = `file-item ${cursor.value.name === currentOpenFilename ? 'active' : ''}`;
+                    li.innerText = cursor.value.name;
+                    li.onclick = () => openFile(cursor.value.name, cursor.value.content);
+                    list.appendChild(li);
+                    cursor.continue();
+                } else if (list.innerHTML === '') {
+                    list.innerHTML = '<div style="padding: 10px; color: #888; font-size: 13px;">No history saved yet.</div>';
+                }
+            };
+            toggleSidebar(true);
+        }
+
+        // ---- LOAD SERVER EXAMPLES DB ----
+        // Embedded backup so it loads locally under file:/// without CORS errors
+        const embeddedSamples = {
+    "basic": [
+        {
+            "name": "01_HelloWorld.san",
+            "content": "// 01: The classic first program\nवद \"Hello World! Welcome to Panini.\""
+        },
+        {
+            "name": "02_Greeting.san",
+            "content": "// 02: Asking for text input\nवद \"What is your name?\"\nपृच्छ नाम-मध्ये\n\nवद \"Namaste \" नाम \"! How are you today?\""
+        },
+        {
+            "name": "03_Addition.san",
+            "content": "// 03: Simple Addition Calculator\nवद \"Enter two numbers to add:\"\nपृच्छ पहला-मध्ये\nपृच्छ दूसरा-मध्ये\n\nपहला दूसरा संयोजय उत्तर-मध्ये\nवद \"The total is: \" उत्तर"
+        },
+        {
+            "name": "04_Shopping.san",
+            "content": "// 04: Shopping Change Calculator\nवद \"You have 100 Rupees.\"\n१०० धन-मध्ये स्थापय\n\nवद \"How much does the chocolate cost?\"\nपृच्छ मूल्य-मध्ये\n\nधन मूल्य न्यूनय शेष-मध्ये\nवद \"Your change is: \" शेष \" Rupees.\""
+        },
+        {
+            "name": "05_Area.san",
+            "content": "// 05: Area of a Rectangle\nवद \"Geometry Calculator\"\nपृच्छ लम्बाई-मध्ये\nपृच्छ चौडाई-मध्ये\n\nलम्बाई चौडाई गुणय क्षेत्रफल-मध्ये\nवद \"The Area is: \" क्षेत्रफल"
+        },
+        {
+            "name": "06_Pizza.san",
+            "content": "// 06: Sharing Pizza Slices\nवद \"Pizza Sharing Calculator!\"\nपृच्छ स्लाइस-मध्ये\nपृच्छ मित्र-मध्ये\n\nस्लाइस मित्र विभज हिस्सा-मध्ये\nवद \"Each friend gets \" हिस्सा \" slices.\""
+        },
+        {
+            "name": "07_VotingAge.san",
+            "content": "// 07: Voting Age Checker\nवद \"Check your voting eligibility:\"\nपृच्छ आयु-मध्ये\n\nयदि ( आयु > १७ ) {\n    वद \"Congratulations, you can vote!\"\n} तर्हि {\n    वद \"Sorry, you are too young to vote.\"\n}"
+        },
+        {
+            "name": "08_Password.san",
+            "content": "// 08: Secret Password Door\nवद \"Enter the secret password:\"\nपृच्छ पास-मध्ये\n\nयदि ( पास == \"Panini\" ) {\n    वद \"Access Granted! Welcome inside.\"\n} तर्हि {\n    वद \"Wrong Password. Access Denied!\"\n}"
+        },
+        {
+            "name": "09_Countdown.san",
+            "content": "// 09: Rocket Launch Countdown\n१० समय-मध्ये स्थापय\nवद \"Starting Rocket Countdown...\"\n\nयावत् ( समय > ० ) {\n    वद समय\n    समय १ न्यूनय समय-मध्ये\n}\n\nवद \"Blastoff!!!\""
+        },
+        {
+            "name": "10_CountUp.san",
+            "content": "// 10: Simple Counter\n१ गिनती-मध्ये स्थापय\nवद \"Counting to 5...\"\n\nयावत् ( गिनती < ६ ) {\n    वद गिनती\n    गिनती १ संयोजय गिनती-मध्ये\n}\n\nवद \"Done!\""
+        },
+        {
+            "name": "11_ThemePark.san",
+            "content": "// 11: Theme Park Ticket Pricing\nवद \"Welcome to the Ticket Machine.\"\nपृच्छ आयु-मध्ये\n\nयदि ( आयु < ५ ) {\n    वद \"Ticket is FREE for kids under 5!\"\n} तर्हि {\n    \n    यदि ( आयु < १८ ) {\n        वद \"Ticket is 50 Rupees for students.\"\n    } तर्हि {\n        वद \"Ticket is 100 Rupees for adults.\"\n    }\n    \n}"
+        },
+        {
+            "name": "12_Factorial.san",
+            "content": "// 12: Factorial Calculator\nवद \"Enter a number to find its factorial:\"\nपृच्छ अंक-मध्ये\n१ परिणाम-मध्ये स्थापय\n\nयावत् ( अंक > ० ) {\n    परिणाम अंक गुणय परिणाम-मध्ये\n    अंक १ न्यूनय अंक-मध्ये\n}\nवद \"The Factorial is: \" परिणाम"
+        },
+        {
+            "name": "13_Labour_Wage.san",
+            "content": "// 13: Daily Labour Wage & Overtime Calculator\nवद \"Enter total hours worked today:\"\nपृच्छ घंटे-मध्ये\n५० दर-मध्ये स्थापय  // 50 Rupees per hour base rate\n\nयदि ( घंटे > ८ ) {\n    ८ दर गुणय मूल_वेतन-मध्ये\n    घंटे ८ न्यूनय अतिरिक्त_घंटे-मध्ये\n    ७५ अतिरिक्त_दर-मध्ये स्थापय // Overtime rate\n    \n    अतिरिक्त_घंटे अतिरिक्त_दर गुणय अतिरिक्त_वेतन-मध्ये\n    मूल_वेतन अतिरिक्त_वेतन संयोजय कुल_वेतन-मध्ये\n    \n    वद \"Base Wage: \" मूल_वेतन \" + Overtime: \" अतिरिक्त_वेतन\n    वद \"Total Payout: \" कुल_वेतन\n} तर्हि {\n    घंटे दर गुणय कुल_वेतन-मध्ये\n    वद \"Total Payout: \" कुल_वेतन\n}"
+        },
+        {
+            "name": "14_Fibonacci.san",
+            "content": "// 14: Fibonacci Sequence Generator\nवद \"How many Fibonacci numbers to generate?\"\nपृच्छ सीमा-मध्ये\n० पहला-मध्ये स्थापय\n१ दूसरा-मध्ये स्थापय\n\nवद \"Fibonacci Sequence:\"\nयावत् ( सीमा > ० ) {\n    वद पहला\n    पहला दूसरा संयोजय अगला-मध्ये\n    दूसरा पहला-मध्ये स्थापय\n    अगला दूसरा-मध्ये स्थापय\n    सीमा १ न्यूनय सीमा-मध्ये\n}"
+        },
+        {
+            "name": "15_Diet_Tracker.san",
+            "content": "// 15: Daily Calorie Limit Checker\n२००० लक्ष्य-मध्ये स्थापय\n० खाया-मध्ये स्थापय\n१ चालू-मध्ये स्थापय\n\nवद \"Your daily goal is 2000 calories.\"\n\nयावत् ( चालू == १ ) {\n    वद \"Enter meal calories (or type 0 to stop):\"\n    पृच्छ भोजन-मध्ये\n    \n    यदि ( भोजन == ० ) {\n        ० चालू-मध्ये स्थापय\n    } तर्हि {\n        खाया भोजन संयोजय खाया-मध्ये\n        वद \"Total consumed so far: \" खाया\n    }\n}\n\nयदि ( खाया > लक्ष्य ) {\n    वद \"Warning! You exceeded your daily calorie goal.\"\n} तर्हि {\n    वद \"Great job staying healthy!\"\n}"
+        },
+        {
+            "name": "16_Resort_Discount.san",
+            "content": "// 16: Resort Booking with Group Discount\nवद \"Welcome to the Resort Booking System.\"\nवद \"Enter number of guests:\"\nपृच्छ अतिथि-मध्ये\n१५०० किराया-मध्ये स्थापय // 1500 per person\n\nअतिथि किराया गुणय कुल_बिल-मध्ये\n\nयदि ( अतिथि > ५ ) {\n    वद \"Group of more than 5! Applying 10 percent discount.\"\n    कुल_बिल १० गुणय छूट_अंश-मध्ये\n    छूट_अंश १०० विभज छूट-मध्ये\n    कुल_बिल छूट न्यूनय अंतिम_बिल-मध्ये\n    वद \"Your final discounted bill is: \" अंतिम_बिल\n} तर्हि {\n    वद \"Your total bill is: \" कुल_बिल\n}"
+        },
+        {
+            "name": "17_Turf_Booking.san",
+            "content": "// 17: Sports Turf Hourly Booking\nवद \"Welcome to the Sports Complex Turf Booking.\"\nवद \"Enter number of hours played:\"\nपृच्छ घंटे-मध्ये\n१२०० दर-मध्ये स्थापय \n\nघंटे दर गुणय कीमत-मध्ये\n            \nयदि ( घंटे > ३ ) {\n    वद \"Long session bonus! Removing 500 Rupees.\"\n    कीमत ५०० न्यूनय कीमत-मध्ये\n}\n            \nवद \"Please pay: \" कीमत \" Rupees at the counter.\""
+        },
+        {
+            "name": "18_Aptitude_Test.san",
+            "content": "// 18: Psychometric Aptitude Quiz\n० अंक-मध्ये स्थापय\n\nवद \"Question 1: What is 12 multiplied by 12?\"\nपृच्छ उत्तर१-मध्ये\nयदि ( उत्तर१ == १४४ ) {\n    अंक १ संयोजय अंक-मध्ये\n    वद \"Correct!\"\n} तर्हि { \n    वद \"Wrong.\" \n}\n\nवद \"Question 2: What is 100 divided by 4?\"\nपृच्छ उत्तर२-मध्ये\nयदि ( उत्तर२ == २५ ) {\n    अंक १ संयोजय अंक-मध्ये\n    वद \"Correct!\"\n} तर्हि { \n    वद \"Wrong.\" \n}\n\nवद \"Test complete. Your Aptitude Score is: \" अंक \"/ 2\""
+        },
+        {
+            "name": "19_Leap_Year.san",
+            "content": "// 19: Astronomical Leap Year Checker\nवद \"Enter a year to check if it is a Leap Year:\"\nपृच्छ वर्ष-मध्ये\n\n// Modulo Trick: If (Year / 4) * 4 == Year, it is divisible by 4!\nवर्ष ४ विभज भाग-मध्ये \nभाग ४ गुणय जांच-मध्ये\n\nयदि ( वर्ष == जांच ) {\n    वद वर्ष \" is a Leap Year!\"\n} तर्हि {\n    वद वर्ष \" is not a Leap Year.\"\n}"
+        },
+        {
+            "name": "20_Guess_Number.san",
+            "content": "// 20: Guess the Secret Number\n७ गुप्त-मध्ये स्थापय\n० प्रयास-मध्ये स्थापय\n१ चालू-मध्ये स्थापय\n\nवद \"I am thinking of a number between 1 and 10.\"\n\nयावत् ( चालू == १ ) {\n    पृच्छ अनुमान-मध्ये\n    प्रयास १ संयोजय प्रयास-मध्ये\n\n    यदि ( अनुमान == गुप्त ) {\n        वद \"Correct! You guessed it in \" प्रयास \" tries.\"\n        ० चालू-मध्ये स्थापय\n    } तर्हि {\n        यदि ( अनुमान > गुप्त ) {\n            वद \"Too high! Try again.\"\n        } तर्हि {\n            वद \"Too low! Try again.\"\n        }\n    }\n}"
+        },
+        {
+            "name": "21_Vending_Menu.san",
+            "content": "// 21: Interactive Vending Machine Menu\nवद \"Select an item: 1 for Water, 2 for Chips, 3 for Chocolate\"\nपृच्छ चयन-मध्ये\n\nयदि ( चयन == १ ) {\n    वद \"Water selected. Price: 20 Rs.\"\n}\nयदि ( चयन == २ ) {\n    वद \"Chips selected. Price: 30 Rs.\"\n}\nयदि ( चयन == ३ ) {\n    वद \"Chocolate selected. Price: 50 Rs.\"\n}\nयदि ( चयन < १ ) {\n    वद \"Invalid selection.\"\n}\nयदि ( चयन > ३ ) {\n    वद \"Invalid selection.\"\n}"
+        }
+    ],
+    "advance": [
+        {
+            "name": "22_Prime_Engine_Stress_Test.san",
+            "content": "// ==========================================\n// PANINI ARCHITECTURE STRESS TEST\n// Prime Number Generator & Multi-Layer Logic\n// ==========================================\n\nवद \"=== PANINI STRESS TEST: PRIME FINDER ===\"\nवद \"Enter upper limit to find prime numbers:\"\nपृच्छ सीमा-मध्ये\n\n२ वर्तमान-मध्ये स्थापय\n० कुल_प्रधान-मध्ये स्थापय\n\nवद \"Calculating primes up to limit...\"\n\n// Outer Loop: Iterates through numbers from 2 up to 'सीमा'\nयावत् ( वर्तमान < सीमा ) {\n    \n    // Assume current number is prime (1 = True, 0 = False)\n    १ अस्ति_प्रधान-मध्ये स्थापय\n    २ विभाजक-मध्ये स्थापय\n\n    // Inner Loop: Check for factors from 2 up to (वर्तमान / 2)\n    // We compute halfway mark to save execution cycles\n    वर्तमान २ विभज आधा_वर्तमान-मध्ये\n\n    यावत् ( विभाजक <= आधा_वर्तमान ) {\n        \n        // Advanced Math Check: (वर्तमान / विभाजक) * विभाजक == वर्तमान\n        वर्तमान विभाजक विभज भाग-मध्ये\n        भाग विभाजक गुणय गुणन-मध्ये\n\n        यदि ( वर्तमान == गुणन ) {\n            // Factor found! It is NOT a prime number.\n            ० अस्ति_प्रधान-मध्ये स्थापय\n            // Force inner loop to break by setting divisor higher than limit\n            वर्तमान विभाजक-मध्ये स्थापय \n        }\n\n        विभाजक १ संयोजय विभाजक-मध्ये\n    }\n\n    // If it survived the inner loop as prime, print and count it\n    यदि ( अस्ति_प्रधान == १ ) {\n        वद \"Found Prime: \" वर्तमान\n        कुल_प्रधान १ संयोजय कुल_प्रधान-मध्ये\n    }\n\n    वर्तमान १ संयोजय वर्तमान-मध्ये\n}\n\nवद \"==========================================\"\nवद \"Stress test complete!\"\nवद \"Total prime numbers found: \" कुल_प्रधान"
+        },
+        {
+            "name": "23_Perfect_Number.san",
+            "content": "// 23: Perfect Number Checker\nवद \"Enter a number to check if it is Perfect:\"\nपृच्छ संख्या-मध्ये\n० योग-मध्ये स्थापय\n१ विभाजक-मध्ये स्थापय\nसंख्या २ विभज आधा-मध्ये\n\nयावत् ( विभाजक <= आधा ) {\n    संख्या विभाजक विभज भाग-मध्ये\n    भाग विभाजक गुणय गुणन-मध्ये\n    \n    यदि ( संख्या == गुणन ) {\n        योग विभाजक संयोजय योग-मध्ये\n    }\n    विभाजक १ संयोजय विभाजक-मध्ये\n}\nयदि ( योग == संख्या ) {\n    वद संख्या \" is a PERFECT Number!\"\n} तर्हि {\n    वद संख्या \" is not perfect.\"\n}"
+        },
+        {
+            "name": "24_GCD_Euclidean.san",
+            "content": "// 24: Greatest Common Divisor (GCD)\nवद \"Enter First Number:\"\nपृच्छ क-मध्ये\nवद \"Enter Second Number:\"\nपृच्छ ख-मध्ये\n\nयावत् ( ख > ० ) {\n    क ख विभज भाग-मध्ये\n    भाग ख गुणय गुणन-मध्ये\n    क गुणन न्यूनय शेष-मध्ये\n    \n    ख क-मध्ये स्थापय\n    शेष ख-मध्ये स्थापय\n}\nवद \"The GCD is: \" क"
+        },
+        {
+            "name": "25_Collatz_Conjecture.san",
+            "content": "// 25: Collatz Peak Tracker\nवद \"Enter Collatz starting number:\"\nपृच्छ वर्तमान-मध्ये\n० अधिकतम-मध्ये स्थापय\n० कदम-मध्ये स्थापय\n\nयावत् ( वर्तमान > १ ) {\n    यदि ( वर्तमान > अधिकतम ) {\n        वर्तमान अधिकतम-मध्ये स्थापय\n    }\n    \n    वर्तमान २ विभज आधा-मध्ये\n    आधा २ गुणय सम_जांच-मध्ये\n    \n    यदि ( वर्तमान == सम_जांच ) {\n        आधा वर्तमान-मध्ये स्थापय\n    } तर्हि {\n        वर्तमान ३ गुणय वर्तमान-मध्ये\n        वर्तमान १ संयोजय वर्तमान-मध्ये\n    }\n    कदम १ संयोजय कदम-मध्ये\n}\nवद \"Reached 1 in \" कदम \" steps!\"\nवद \"Peak value reached: \" अधिकतम"
+        },
+        {
+            "name": "26_Prime_Factors.san",
+            "content": "// 26: Prime Factorization\nवद \"Enter a number to factorize:\"\nपृच्छ संख्या-मध्ये\n२ विभाजक-मध्ये स्थापय\n\nयावत् ( संख्या > १ ) {\n    संख्या विभाजक विभज भाग-मध्ये\n    भाग विभाजक गुणय गुणन-मध्ये\n    \n    यदि ( संख्या == गुणन ) {\n        वद \"Factor: \" विभाजक\n        भाग संख्या-मध्ये स्थापय\n    } तर्हि {\n        विभाजक १ संयोजय विभाजक-मध्ये\n    }\n}"
+        },
+        {
+            "name": "27_Digital_Root.san",
+            "content": "// 27: Digital Root (Sum of sums)\nवद \"Enter a large number:\"\nपृच्छ संख्या-मध्ये\n\nयावत् ( संख्या > ९ ) {\n    ० योग-मध्ये स्थापय\n    \n    यावत् ( संख्या > ० ) {\n        संख्या १० विभज भाग-मध्ये\n        भाग १० गुणय गुणन-मध्ये\n        संख्या गुणन न्यूनय शेष-मध्ये\n        \n        योग शेष संयोजय योग-मध्ये\n        भाग संख्या-मध्ये स्थापय\n    }\n    योग संख्या-मध्ये स्थापय\n}\nवद \"The Digital Root is: \" संख्या"
+        },
+        {
+            "name": "28_Median_Of_Three.san",
+            "content": "// 28: Median of Three Numbers\nवद \"Enter A:\"\nपृच्छ अ-मध्ये\nवद \"Enter B:\"\nपृच्छ ब-मध्ये\nवद \"Enter C:\"\nपृच्छ स-मध्ये\n\nयदि ( अ > ब ) {\n    यदि ( ब > स ) { वद \"Median is B: \" ब }\n    तर्हि {\n        यदि ( अ > स ) { वद \"Median is C: \" स }\n        तर्हि { वद \"Median is A: \" अ }\n    }\n} तर्हि {\n    यदि ( अ > स ) { वद \"Median is A: \" अ }\n    तर्हि {\n        यदि ( ब > स ) { वद \"Median is C: \" स }\n        तर्हि { वद \"Median is B: \" ब }\n    }\n}"
+        },
+        {
+            "name": "29_Tax_Brackets.san",
+            "content": "// 29: Progressive Tax Calculator\nवद \"Enter Income:\"\nपृच्छ आय-मध्ये\n० कर-मध्ये स्थापय\n\nयदि ( आय > १००००० ) {\n    आय १००००० न्यूनय शेष-मध्ये\n    शेष ०.३ गुणय अतिरिक्त-मध्ये\n    कर अतिरिक्त संयोजय कर-मध्ये\n    १००००० आय-मध्ये स्थापय\n}\nयदि ( आय > ५०००० ) {\n    आय ५०००० न्यूनय शेष-मध्ये\n    शेष ०.२ गुणय अतिरिक्त-मध्ये\n    कर अतिरिक्त संयोजय कर-मध्ये\n    ५०००० आय-मध्ये स्थापय\n}\nयदि ( आय > २०००० ) {\n    आय २०००० न्यूनय शेष-मध्ये\n    शेष ०.१ गुणय अतिरिक्त-मध्ये\n    कर अतिरिक्त संयोजय कर-मध्ये\n}\nवद \"Total Tax Owed: \" कर"
+        },
+        {
+            "name": "30_Number_To_Words.san",
+            "content": "// 30: Single Digit to String Switcher\nवद \"Enter a single digit (0-5):\"\nपृच्छ अंक-मध्ये\n\nयदि ( अंक == ० ) { वद \"Zero\" }\nयदि ( अंक == १ ) { वद \"One\" }\nयदि ( अंक == २ ) { वद \"Two\" }\nयदि ( अंक == ३ ) { वद \"Three\" }\nयदि ( अंक == ४ ) { वद \"Four\" }\nयदि ( अंक == ५ ) { वद \"Five\" }\nयदि ( अंक > ५ ) { वद \"Number too big for this demo!\" }"
+        },
+        {
+            "name": "31_Pythagorean_Triplets.san",
+            "content": "// 31: Pythagorean Triplets (A^2 + B^2 = C^2)\nवद \"Finding triplets up to limit 15...\"\n१५ सीमा-मध्ये स्थापय\n१ अ-मध्ये स्थापय\n\nयावत् ( अ <= सीमा ) {\n    अ अ गुणय अ_वर्ग-मध्ये\n    १ ब-मध्ये स्थापय\n    \n    यावत् ( ब <= सीमा ) {\n        ब ब गुणय ब_वर्ग-मध्ये\n        १ स-मध्ये स्थापय\n        \n        यावत् ( स <= सीमा ) {\n            स स गुणय स_वर्ग-मध्ये\n            अ_वर्ग ब_वर्ग संयोजय योग-मध्ये\n            \n            यदि ( योग == स_वर्ग ) {\n                वद \"Triplet found: \" अ \", \" ब \", \" स\n            }\n            स १ संयोजय स-मध्ये\n        }\n        ब १ संयोजय ब-मध्ये\n    }\n    अ १ संयोजय अ-मध्ये\n}"
+        },
+        {
+            "name": "32_Binary_Converter.san",
+            "content": "// 32: Decimal to Binary String\nवद \"Enter number to convert to Binary:\"\nपृच्छ संख्या-मध्ये\n\"\" बाइनरी-मध्ये स्थापय\n\nयावत् ( संख्या > ० ) {\n    संख्या २ विभज भाग-मध्ये\n    भाग २ गुणय गुणन-मध्ये\n    संख्या गुणन न्यूनय शेष-मध्ये\n    \n    // Prepend remainder to string\n    शेष बाइनरी संयोजय बाइनरी-मध्ये\n    भाग संख्या-मध्ये स्थापय\n}\nवद \"Binary Output: \" बाइनरी"
+        },
+        {
+            "name": "33_Fibonacci_Words.san",
+            "content": "// 33: Fibonacci String Sequence\nवद \"How many string generations?\"\nपृच्छ सीमा-मध्ये\n\"A\" पहला-मध्ये स्थापय\n\"B\" दूसरा-मध्ये स्थापय\n\nवद पहला\nवद दूसरा\n\nयावत् ( सीमा > २ ) {\n    पहला दूसरा संयोजय नया-मध्ये\n    वद नया\n    \n    दूसरा पहला-मध्ये स्थापय\n    नया दूसरा-मध्ये स्थापय\n    सीमा १ न्यूनय सीमा-मध्ये\n}"
+        },
+        {
+            "name": "34_ASCII_Pyramid.san",
+            "content": "// 34: Star Pyramid Generator\nवद \"Enter pyramid height:\"\nपृच्छ ऊंचाई-मध्ये\n१ पंक्ति-मध्ये स्थापय\n\nयावत् ( पंक्ति <= ऊंचाई ) {\n    \"\" सितारे-मध्ये स्थापय\n    १ गिनती-मध्ये स्थापय\n    \n    यावत् ( गिनती <= पंक्ति ) {\n        सितारे \"*\" संयोजय सितारे-मध्ये\n        गिनती १ संयोजय गिनती-मध्ये\n    }\n    वद सितारे\n    पंक्ति १ संयोजय पंक्ति-मध्ये\n}"
+        },
+        {
+            "name": "35_Palindrome_Number.san",
+            "content": "// 35: Number Reverser\nवद \"Enter a multi-digit number:\"\nपृच्छ संख्या-मध्ये\n० उल्टा-मध्ये स्थापय\nसंख्या मूल-मध्ये स्थापय\n\nयावत् ( संख्या > ० ) {\n    संख्या १० विभज भाग-मध्ये\n    भाग १० गुणय गुणन-मध्ये\n    संख्या गुणन न्यूनय शेष-मध्ये\n    \n    उल्टा १० गुणय उल्टा-मध्ये\n    उल्टा शेष संयोजय उल्टा-मध्ये\n    भाग संख्या-मध्ये स्थापय\n}\nवद \"Reversed Number: \" उल्टा"
+        },
+        {
+            "name": "36_Leibniz_Pi.san",
+            "content": "// 36: Leibniz Pi Approximator\nवद \"Enter number of iterations (e.g. 500):\"\nपृच्छ सीमा-मध्ये\n० पाई-मध्ये स्थापय\n१ विभाजक-मध्ये स्थापय\n१ चिह्न-मध्ये स्थापय\n० कदम-मध्ये स्थापय\n\nयावत् ( कदम < सीमा ) {\n    ४.० विभाजक विभज अंश-मध्ये\n    अंश चिह्न गुणय पद-मध्ये\n    \n    पाई पद संयोजय पाई-मध्ये\n    विभाजक २ संयोजय विभाजक-मध्ये\n    चिह्न -१ गुणय चिह्न-मध्ये\n    \n    कदम १ संयोजय कदम-मध्ये\n}\nवद \"Approximate Pi: \" पाई"
+        },
+        {
+            "name": "37_Newton_Square_Root.san",
+            "content": "// 37: Newton's Method Square Root\nवद \"Enter number to find square root:\"\nपृच्छ संख्या-मध्ये\nसंख्या अनुमान-मध्ये स्थापय  // Initial guess\n१० सीमा-मध्ये स्थापय\n० कदम-मध्ये स्थापय\n\nयावत् ( कदम < सीमा ) {\n    संख्या अनुमान विभज भाग-मध्ये\n    अनुमान भाग संयोजय योग-मध्ये\n    योग २.० विभज अनुमान-मध्ये\n    \n    कदम १ संयोजय कदम-मध्ये\n}\nवद \"Square Root is approx: \" अनुमान"
+        },
+        {
+            "name": "38_Armstrong_Number.san",
+            "content": "// 38: Armstrong Number Checker\nवद \"Enter a 3-digit number:\"\nपृच्छ संख्या-मध्ये\nसंख्या मूल-मध्ये स्थापय\n० योग-मध्ये स्थापय\n\nयावत् ( संख्या > ० ) {\n    संख्या १० विभज भाग-मध्ये\n    भाग १० गुणय गुणन-मध्ये\n    संख्या गुणन न्यूनय शेष-मध्ये\n    \n    शेष शेष गुणय वर्ग-मध्ये\n    वर्ग शेष गुणय घन-मध्ये\n    योग घन संयोजय योग-मध्ये\n    \n    भाग संख्या-मध्ये स्थापय\n}\nयदि ( योग == मूल ) {\n    वद मूल \" IS an Armstrong Number!\"\n} तर्हि {\n    वद मूल \" is NOT an Armstrong Number.\"\n}"
+        },
+        {
+            "name": "39_LCG_Random.san",
+            "content": "// 39: Pseudo-Random Number Generator\nवद \"Generating 5 random numbers...\"\n७ बीज-मध्ये स्थापय  // Seed\n५ सीमा-मध्ये स्थापय\n० कदम-मध्ये स्थापय\n\nयावत् ( कदम < सीमा ) {\n    बीज ५ गुणय भाग१-मध्ये\n    भाग१ ३ संयोजय भाग२-मध्ये\n    \n    // Modulo 16\n    भाग२ १६ विभज भाग३-मध्ये\n    भाग३ १६ गुणय भाग४-मध्ये\n    भाग२ भाग४ न्यूनय बीज-मध्ये\n    \n    वद \"Random Number: \" बीज\n    कदम १ संयोजय कदम-मध्ये\n}"
+        },
+        {
+            "name": "40_Infinite_Loop_Safety.san",
+            "content": "// 40: The Safety Governor Test\nवद \"Attempting to run an infinite loop...\"\nवद \"The compiler should forcefully stop at 2000 steps.\"\n१ चालू-मध्ये स्थापय\n० गिनती-मध्ये स्थापय\n\nयावत् ( चालू == १ ) {\n    गिनती १ संयोजय गिनती-मध्ये\n    // Intentionally never turning 'चालू' to 0\n}\nवद \"Governor activated! Loop stopped safely.\"\nवद \"Total steps executed: \" गिनती"
+        },
+        {
+            "name": "41_Divide_By_Zero_Defense.san",
+            "content": "// 41: Division by Zero Test\nवद \"Attempting to divide 100 by 0...\"\n१०० शून्य विभज उत्तर-मध्ये\nवद \"Output: \" उत्तर\n\nवद \"Attempting to divide variables...\"\n५ क-मध्ये स्थापय\n० ख-मध्ये स्थापय\nक ख विभज उत्तर२-मध्ये\nवद \"Output: \" उत्तर२"
+        },
+        {
+            "name": "42_Self_Dividing.san",
+            "content": "// 42: Self-Dividing Numbers (e.g. 128 is divisible by 1, 2, and 8)\nवद \"Checking number 128:\"\n१२८ संख्या-मध्ये स्थापय\nसंख्या वर्तमान-मध्ये स्थापय\n१ सफल-मध्ये स्थापय\n\nयावत् ( वर्तमान > ० ) {\n    वर्तमान १० विभज भाग-मध्ये\n    भाग १० गुणय गुणन-मध्ये\n    वर्तमान गुणन न्यूनय शेष-मध्ये\n    \n    यदि ( शेष == ० ) {\n        ० सफल-मध्ये स्थापय\n    } तर्हि {\n        संख्या शेष विभज जांच_भाग-मध्ये\n        जांच_भाग शेष गुणय जांच_गुणन-मध्ये\n        यदि ( संख्या != जांच_गुणन ) {\n            ० सफल-मध्ये स्थापय\n        }\n    }\n    भाग वर्तमान-मध्ये स्थापय\n}\n\nयदि ( सफल == १ ) { वद संख्या \" is Self-Dividing!\" }\nतर्हि { वद संख्या \" is NOT Self-Dividing.\" }"
+        },
+		{
+            "name": "43_Functions.san",
+            "content": "// 43: Using Functions to calculate a Square\nवद \"--- Function Demonstration ---\"\n\nकार्य वर्ग_निकालो ( अंक ) {\n    अंक अंक गुणय परिणाम-मध्ये\n    प्रतिफल परिणाम\n}\n\nवद \"Enter a number:\"\nपृच्छ संख्या-मध्ये\n\nवर्ग_निकालो ( संख्या ) उत्तर-मध्ये स्थापय\nवद \"The square is: \" उत्तर"
+        },
+		{
+            "name": "44_Array_Loops.san",
+            "content": "// 44: Looping through an Array\nवद \"--- Array Math ---\"\n[ १०, २०, ३०, ४०, ५० ] सूची-मध्ये स्थापय\n० योग-मध्ये स्थापय\n० सूचकांक-मध्ये स्थापय\n५ सीमा-मध्ये स्थापय  // Array length\n\nयावत् ( सूचकांक < सीमा ) {\n    // Read the array dynamically using the index variable\n    योग सूची[सूचकांक] संयोजय योग-मध्ये\n    \n    // Move to the next index\n    सूचकांक १ संयोजय सूचकांक-मध्ये\n}\n\nवद \"The total sum of the array is: \" योग"
+        }
+    ]
+};
+
+        async function loadExamples() {
+            document.getElementById('sidebar-title').innerText = "Server Examples";
+            document.getElementById('new-file-btn').style.display = "none";
+            document.getElementById('save-btn-container').style.display = "none";
+            
+            const list = document.getElementById('fileList');
+            list.innerHTML = '';
+            toggleSidebar(true);
+
+            let data = null;
+
+            // Try fetching from server first; fallback to embedded copy if offline/local
+            try {
+                const response = await fetch('samples.json'); 
+                if (response.ok) {
+                    data = await response.json();
+                }
+            } catch (error) {
+                // Browser blocked file:/// fetch; fall back to embedded data
+            }
+
+            if (!data && typeof embeddedSamples !== 'undefined') {
+                data = embeddedSamples;
+            }
+
+            if (!data) {
+                list.innerHTML = `<div style="padding: 10px; color: #FF5555; font-size: 13px;">Error: Could not load samples database. Ensure 'samples.json' is on your server.</div>`;
+                return;
+            }
+
+            if (data.basic && data.basic.length > 0) {
+                const basicHeader = document.createElement('div');
+                basicHeader.className = 'category-header';
+                basicHeader.innerText = '🟢 Basic Programs';
+                list.appendChild(basicHeader);
+
+                data.basic.forEach(file => {
+                    const item = document.createElement('div');
+                    item.className = 'file-item';
+                    item.innerText = file.name;
+                    item.onclick = () => openFile(file.name, file.content);
+                    list.appendChild(item);
+                });
+            }
+
+            if (data.advance && data.advance.length > 0) {
+                const advanceHeader = document.createElement('div');
+                advanceHeader.className = 'category-header';
+                advanceHeader.innerText = '🔴 Advance Programs';
+                list.appendChild(advanceHeader);
+
+                data.advance.forEach(file => {
+                    const item = document.createElement('div');
+                    item.className = 'file-item';
+                    item.innerText = file.name;
+                    item.onclick = () => openFile(file.name, file.content);
+                    list.appendChild(item);
+                });
+            }
+        }
+		
+		
+        // ---- FILE OPERATIONS ----
+        function openFile(name, content) {
+            currentOpenFilename = name;
+            document.getElementById('currentFilename').innerText = name.toUpperCase();
+            if(editorInstance) editorInstance.setValue(content);
+            
+            // Highlight active state in UI
+            document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
+            if(event && event.target) {
+                event.target.classList.add('active');
+            }
+        }
+
+        function saveCurrentFile() {
+            if(!editorInstance) return;
+            const content = editorInstance.getValue();
+            const tx = db.transaction(storeName, "readwrite");
+            tx.objectStore(storeName).put({ name: currentOpenFilename, content: content });
+            tx.oncomplete = () => {
+                term.innerHTML = `<span style="color:yellow;">[System] Saved ${currentOpenFilename} to Local History.</span>\n`;
+                // Refresh list if currently viewing history
+                if (document.getElementById('sidebar-title').innerText === "Local History") {
+                    loadHistory();
+                }
+            };
+        }
+
+		function createNewFile() {
+            const name = prompt("Enter new filename (e.g., test.san):", "new_file.san");
+            if (name) {
+                // Ensure the filename has an extension
+                const safeName = name.includes('.') ? name : name + '.san';
+                
+                currentOpenFilename = safeName;
+                document.getElementById('currentFilename').innerText = safeName.toUpperCase();
+                editorInstance.setValue("// New Panini Script\n\n");
+                
+                // Save it to the database
+                saveCurrentFile();
+                
+                // Crucial: Open the sidebar so the user can see they now have multiple files!
+                loadHistory(); 
+            }
+        }
+		
+		// ==========================================
+        // LOCAL PC FILE OPERATIONS (Open / Download)
+        // ==========================================
+        function downloadCurrentFile() {
+            if (!editorInstance) return;
+            const content = editorInstance.getValue();
+            
+            // Create a virtual file (Blob) 
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            // Create a hidden anchor tag and force a click to trigger download
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentOpenFilename || 'program.san';
+            document.body.appendChild(a);
+            a.click();
+            
+            // Clean up
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            // Auto-save to internal browser history too
+            saveCurrentFile();
+            
+            const term = document.getElementById('terminal');
+            term.innerHTML += `<span style="color:#00FF00;">[System] Downloaded ${currentOpenFilename} to your PC successfully.</span>\n`;
+            term.scrollTop = term.scrollHeight;
+        }
+
+        function openFileFromDisk(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                currentOpenFilename = file.name;
+                document.getElementById('currentFilename').innerText = currentOpenFilename.toUpperCase();
+                
+                if (editorInstance) {
+                    editorInstance.setValue(content);
+                }
+                
+                // Immediately save this new file to the internal history sidebar
+                saveCurrentFile();
+                
+                // Open the history sidebar so the user sees their file list
+                loadHistory(); 
+                
+                const term = document.getElementById('terminal');
+                term.innerHTML = `<span style="color:#00FF00;">[System] Opened ${currentOpenFilename} from PC.</span>\n`;
+                
+                // Reset the input so the user can open the exact same file again later if needed
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        // ==========================================
+        // 2. MONACO EDITOR CONFIGURATION
+        // ==========================================
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            
+            // Register Custom Language
+            monaco.languages.register({ id: 'panini' });
+            monaco.languages.setMonarchTokensProvider('panini', {
+                tokenizer: {
+                    root: [
+                        [/\/\/.*$/, 'comment'],
+                        [/"[^"]*"/, 'string'],
+                        [/\b(स्थापय|वद|संयोजय|न्यूनय|गुणय|विभज|पृच्छ)\b/, 'keyword.action'],
+                        [/\b(यदि|तर्हि|यावत्|कुरु|कृते|कार्य|प्रतिफल)\b/, 'keyword.control'],
+                        [/[a-zA-Z_\u0900-\u097F]+-मध्ये/, 'type.destination'],
+                        [/[0-9०-९]+/, 'number']
+                    ]
+                }
+            });
+
+  
+            // Professional Dark Theme
+            monaco.editor.defineTheme('panini-dark', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: [
+                    { token: 'comment', foreground: '6A9955' }, 
+                    { token: 'string', foreground: 'CE9178' }, 
+                    { token: 'keyword.action', foreground: 'DCDCAA', fontStyle: 'bold' }, 
+                    { token: 'keyword.control', foreground: 'C586C0', fontStyle: 'bold' }, 
+                    { token: 'type.destination', foreground: '9CDCFE' }, 
+                    { token: 'number', foreground: 'B5CEA8' }
+                ],
+                colors: { 'editor.background': '#1E1E1E' }
+            });
+
+            // Ancient Manuscript Light Theme
+            monaco.editor.defineTheme('panini-ancient', {
+                base: 'vs',
+                inherit: true,
+                rules: [
+                    { token: 'comment', foreground: '7B5E57', fontStyle: 'italic' },
+                    { token: 'string', foreground: '2E7D32' },
+                    { token: 'keyword.action', foreground: 'C62828', fontStyle: 'bold' }, 
+                    { token: 'keyword.control', foreground: '1565C0', fontStyle: 'bold' }, 
+                    { token: 'type.destination', foreground: 'E65100' },
+                    { token: 'number', foreground: '00695C' }
+                ],
+                colors: { 'editor.background': '#FDF6E3', 'editor.lineHighlightBackground': '#F5E6C8' }
+            });
+			
+			// ====================================================
+            // INTELLISENSE / AUTOCOMPLETE WIDGET
+            // ====================================================
+            monaco.languages.registerCompletionItemProvider('panini', {
+                provideCompletionItems: function(model, position) {
+                    // Find out what the user is currently typing
+                    const word = model.getWordUntilPosition(position);
+                    const range = {
+                        startLineNumber: position.lineNumber,
+                        endLineNumber: position.lineNumber,
+                        startColumn: word.startColumn,
+                        endColumn: word.endColumn
+                    };
+                    
+                    // The list of suggestions that will appear in the dropdown
+                    const suggestions = [
+                        { label: 'वद (Print)', insertText: 'वद ', documentation: 'Print output to the terminal.' },
+                        { label: 'पृच्छ (Scan/Ask)', insertText: 'पृच्छ -मध्ये', documentation: 'Ask the user for input and save it to a variable.' },
+                        { label: 'स्थापय (Assign/Set)', insertText: 'स्थापय ', documentation: 'Assign a value to a variable or array index.' },
+                        { label: 'संयोजय (Add)', insertText: 'संयोजय ', documentation: 'Add two numbers together.' },
+                        { label: 'न्यूनय (Subtract)', insertText: 'न्यूनय ', documentation: 'Subtract the second number from the first.' },
+                        { label: 'गुणय (Multiply)', insertText: 'गुणय ', documentation: 'Multiply two numbers.' },
+                        { label: 'विभज (Divide)', insertText: 'विभज ', documentation: 'Divide the first number by the second.' },
+                        { label: 'यदि (If)', insertText: 'यदि (  ) {\n    \n}', documentation: 'Execute code if a condition is true.' },
+                        { label: 'तर्हि (Else)', insertText: 'तर्हि {\n    \n}', documentation: 'Execute code if the previous condition was false.' },
+                        { label: 'यावत् (While)', insertText: 'यावत् (  ) {\n    \n}', documentation: 'Repeat code as long as a condition is true.' },
+                        { label: 'कुरु (Do)', insertText: 'कुरु {\n    \n}', documentation: 'Execute code once, then repeat while a condition is true.' },
+                        { label: 'कृते (For)', insertText: 'कृते ( ; ; ) {\n    \n}', documentation: 'A standard for-loop block.' },
+                        { label: 'कार्य (Function)', insertText: 'कार्य (  ) {\n    \n}', documentation: 'Define a custom reusable function.' },
+                        { label: 'प्रतिफल (Return)', insertText: 'प्रतिफल ', documentation: 'Return a value from a function.' },
+                        { label: 'सूची (Array/List)', insertText: 'सूची[ ]', documentation: 'Access an array index.' },
+                        { label: 'सत्य (True)', insertText: 'सत्य ', documentation: 'Boolean True.' },
+                        { label: 'असत्य (False)', insertText: 'असत्य ', documentation: 'Boolean False.' }
+                    ];
+
+                    // Map our suggestions to Monaco's format
+                    const mappedSuggestions = suggestions.map(s => {
+                        return {
+                            label: s.label,
+                            kind: monaco.languages.CompletionItemKind.Keyword,
+                            documentation: s.documentation,
+                            insertText: s.insertText,
+                            range: range
+                        };
+                    });
+
+                    return { suggestions: mappedSuggestions };
+                }
+            });
+			
+
+            // Handle URL Sharing
+            const hash = window.location.hash;
+            let initialCode = "// PANINI V11 : Professional Edition\n\nवद \"Welcome!\"";
+            if (hash && hash.startsWith('#code=')) {
+                try {
+                    initialCode = LZString.decompressFromEncodedURIComponent(hash.replace('#code=', ''));
+                    currentOpenFilename = "shared_snippet.san";
+                } catch(e) {}
+            }
+
+			editorInstance = monaco.editor.create(document.getElementById('editor-container'), {
+                value: initialCode,
+                language: 'panini',
+                theme: localStorage.getItem('paniniTheme') === 'ancient' ? 'panini-ancient' : 'panini-dark',
+                fontSize: 16,
+                fontFamily: 'Consolas, monospace',
+                minimap: { enabled: false },
+                automaticLayout: true,
+                wordWrap: 'off', // REQUIRED: Forces the horizontal scrollbar to exist
+                scrollbar: {
+                    vertical: 'visible', // FORCES Vertical Bar
+                    horizontal: 'visible', // FORCES Horizontal Bar
+                    verticalHasArrows: true,
+                    horizontalHasArrows: true,
+                    verticalScrollbarSize: 14,
+                    horizontalScrollbarSize: 14
+                }
+            });
+
+            document.getElementById('currentFilename').innerText = currentOpenFilename.toUpperCase();
+
+// ====================================================
+            // EXPERT AUTO-SYNTAX DICTIONARY & CURSOR TRACKER
+            // ====================================================
+            // EXPERT AUTO-SYNTAX DICTIONARY & CURSOR TRACKER
+            const autoSyntax = {
+                // I/O (Generates quotes, places cursor inside them)
+                'vad': { text: 'वद ""', dLine: 0, dCol: 4 }, 
+                'print': { text: 'वद ""', dLine: 0, dCol: 4 },
+                'cout': { text: 'वद ""', dLine: 0, dCol: 4 },
+        
+                // Inputs (Generates suffix, places cursor before it)
+                'pricch': { text: 'पृच्छ -मध्ये', dLine: 0, dCol: 6 }, 
+                'pricha': { text: 'पृच्छ -मध्ये', dLine: 0, dCol: 6 }, // FIXED: phonetic spelling
+                'prucha': { text: 'पृच्छ -मध्ये', dLine: 0, dCol: 6 }, // FIXED: phonetic spelling
+                'ask': { text: 'पृच्छ -मध्ये', dLine: 0, dCol: 6 },
+                'scan': { text: 'पृच्छ -मध्ये', dLine: 0, dCol: 6 },
+        
+                // Conditionals (Generates block, places cursor inside parentheses)
+                'yadi': { text: 'यदि (  ) {\n    \n}', dLine: 0, dCol: 6 }, 
+                'if': { text: 'यदि (  ) {\n    \n}', dLine: 0, dCol: 6 },
+                'yavat': { text: 'यावत् (  ) {\n    \n}', dLine: 0, dCol: 8 }, 
+                'while': { text: 'यावत् (  ) {\n    \n}', dLine: 0, dCol: 8 },
+        
+                // Else Block (Generates block, moves cursor to new indented line)
+                'tarhi': { text: 'तर्हि {\n    \n}', dLine: 1, dCol: 4 }, 
+                'else': { text: 'तर्हि {\n    \n}', dLine: 1, dCol: 4 },
+
+                // Functions & Returns (Generates function structure)
+                'karya': { text: 'कार्य (  ) {\n    \n}', dLine: 0, dCol: 8 },
+                'func': { text: 'कार्य (  ) {\n    \n}', dLine: 0, dCol: 8 },
+                'function': { text: 'कार्य (  ) {\n    \n}', dLine: 0, dCol: 8 },
+                'pratiphal': { text: 'प्रतिफल ', dLine: 0, dCol: 8 },
+                'return': { text: 'प्रतिफल ', dLine: 0, dCol: 8 },
+
+                // Arrays
+                'suchi': { text: 'सूची[ ]', dLine: 0, dCol: 6 },
+                'array': { text: 'सूची[ ]', dLine: 0, dCol: 6 },
+                'list': { text: 'सूची[ ]', dLine: 0, dCol: 6 },
+        
+                // Standard Actions (Auto-adds a trailing space, places cursor at end)
+                'sthapay': { text: 'स्थापय ', dLine: 0, dCol: 7 },
+                'store': { text: 'स्थापय ', dLine: 0, dCol: 7 },
+                'sanyojay': { text: 'संयोजय ', dLine: 0, dCol: 7 },
+                'add': { text: 'संयोजय ', dLine: 0, dCol: 7 },
+                'nyunay': { text: 'न्यूनय ', dLine: 0, dCol: 7 },
+                'sub': { text: 'न्यूनय ', dLine: 0, dCol: 7 },
+                'gunay': { text: 'गुणय ', dLine: 0, dCol: 5 },
+                'mul': { text: 'गुणय ', dLine: 0, dCol: 5 },
+                'vibhaj': { text: 'विभज ', dLine: 0, dCol: 5 },
+                'div': { text: 'विभज ', dLine: 0, dCol: 5 },
+                'madhye': { text: '-मध्ये ', dLine: 0, dCol: 7 },
+
+                // Control Structures
+                'kuru': { text: 'कुरु {\n    \n}', dLine: 1, dCol: 4 },
+                'do': { text: 'कुरु {\n    \n}', dLine: 1, dCol: 4 },
+                'krite': { text: 'कृते ( ; ; ) {\n    \n}', dLine: 0, dCol: 7 },
+                'for': { text: 'कृते ( ; ; ) {\n    \n}', dLine: 0, dCol: 7 },
+                
+                // Math & Variables
+                'shesh': { text: 'शेष ', dLine: 0, dCol: 4 },
+                'mod': { text: 'शेष ', dLine: 0, dCol: 4 },
+                'ghat': { text: 'घात ', dLine: 0, dCol: 4 },
+                'pow': { text: 'घात ', dLine: 0, dCol: 4 },
+                'true': { text: 'सत्य ', dLine: 0, dCol: 5 },
+                'false': { text: 'असत्य ', dLine: 0, dCol: 6 },
+                'null': { text: 'शून्य ', dLine: 0, dCol: 6 }
+            };
+
+            // Intelligent Autocorrect & Snippet Keylogger
+            editorInstance.onKeyUp((e) => {
+                // Monaco KeyCode 10 is the Spacebar. We ONLY trigger on space to prevent disrupting normal typing.
+                if (e.keyCode === 10) { 
+                    const position = editorInstance.getPosition();
+                    const lineContent = editorInstance.getModel().getLineContent(position.lineNumber);
+                    
+                    // Grab the word typed right before the spacebar was pressed
+                    const textBeforeSpace = lineContent.substring(0, position.column - 2);
+                    const match = textBeforeSpace.match(/\b([a-zA-Z]+)$/);
+                    
+                    if (match) {
+                        const word = match[1].toLowerCase();
+                        if (autoSyntax[word]) {
+                            const syntax = autoSyntax[word];
+                            
+                            // 1. Calculate where the English word started
+                            const startCol = position.column - 1 - match[1].length;
+                            
+                            // 2. Capture existing line indentation to format blocks cleanly
+                            const currentIndent = lineContent.substring(0, startCol - 1);
+                            const formattedText = syntax.text.replace(/\n/g, '\n' + currentIndent);
+                            
+                            // 3. Create a range that swallows the English word AND the typed space
+                            const range = new monaco.Range(
+                                position.lineNumber, startCol,
+                                position.lineNumber, position.column
+                            );
+                            
+                            // 4. Inject the formatting directly into the undo history stack
+                            editorInstance.executeEdits("autosyntax", [{ range: range, text: formattedText }]);
+                            
+                            // 5. Mathematically calculate where the cursor needs to land
+                            let targetLine = position.lineNumber + syntax.dLine;
+                            let targetCol;
+                            
+                            if (syntax.dLine === 0) {
+                                // Same line adjustment (e.g. landing inside quotes)
+                                targetCol = startCol + syntax.dCol;
+                            } else {
+                                // Multi-line adjustment (e.g. landing inside a { } block)
+                                targetCol = currentIndent.length + 1 + syntax.dCol;
+                            }
+                            
+                            // 6. Snap the cursor to the perfect position
+                            editorInstance.setPosition({ lineNumber: targetLine, column: targetCol });
+                        }
+                    }
+                }
+            });
+     
+        }); // <-- THIS WAS THE MISSING CLOSURE THAT BROKE THE SCRIPT!
+
+        // ==========================================
+        // GLOBAL FUNCTIONS (Must be outside the require block to work with HTML buttons)
+        // ==========================================
+
+        // Triggers native undo so the user can easily revert an autocorrect they didn't want
+        function undoLastAction() {
+            if (editorInstance) {
+                editorInstance.trigger('keyboard', 'undo', null);
+                editorInstance.focus();
+            }
+        }
+        
+        function insertAtCursor(text) {
+            if(!editorInstance) return;
+            const position = editorInstance.getPosition();
+            editorInstance.executeEdits("toolbar", [{
+                range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
+                text: text
+            }]);
+            editorInstance.focus();
+        }
+
+        function generateShareLink() {
+            if(!editorInstance) return;
+            const code = editorInstance.getValue();
+            try {
+                if (typeof LZString === 'undefined') throw new Error("LZString library not loaded.");
+                const compressed = LZString.compressToEncodedURIComponent(code);
+                
+                // If running locally, link back to the live site; otherwise use current origin
+                let base = window.location.origin === "file://" 
+                    ? "https://www.eprashala.com/panini/panini.html" 
+                    : (window.location.origin + window.location.pathname);
+                const url = base + "#code=" + compressed;
+                
+                navigator.clipboard.writeText(url).then(() => {
+                    alert("Shareable link copied to clipboard!\n\n" + url);
+                }).catch(() => {
+                    prompt("Copy your shareable program link:", url);
+                });
+            } catch(e) {
+                alert("Share link requires 'lz-string.min.js' in your folder or an active web connection.");
+            }
+        }
+		
+
+        // ==========================================
+        // 3. ENGINE WITH LINE-ACCURATE ERROR TRACKING
+        // ==========================================
+class SanskritEngine {
+    constructor() {
+        this.specs = [
+            ['COMMENT', /^\/\/.*/],
+            ['STRING', /^"[^"]*"/],
+            ['SATYA', /^सत्य/],
+            ['ASATYA', /^असत्य/],
+            ['SHUNYA', /^शून्य/],
+            ['LBRACKET', /^\[/],
+            ['RBRACKET', /^\]/],
+            ['COMMA', /^,/],
+            ['YADI', /^यदि/],
+            ['TARHI', /^तर्हि/],
+            ['YAVAT', /^यावत्/],
+            ['KURU', /^कुरु/],          
+            ['KRITE', /^कृते/],
+            ['KARYA', /^कार्य/],         // NEW: Function declaration
+            ['PRATIPHAL', /^प्रतिफल/],   // NEW: Return statement			
+            ['PRICCHA', /^पृच्छ/],
+            ['STHAPAYA', /^स्थापय/],
+            ['VADA', /^वद/],
+            ['ADD', /^संयोजय/],
+            ['SUB', /^न्यूनय/],
+            ['MUL', /^गुणय/],
+            ['DIV', /^विभज/],
+            ['MOD', /^शेष/],            
+            ['POW', /^घात/],            
+            ['OP', /^(==|!=|<=|>=|<|>)/],
+            ['LPAREN', /^\(/],
+            ['RPAREN', /^\)/],
+            ['LBRACE', /^\{/],
+            ['RBRACE', /^\}/],
+            ['SEMI', /^;/],             
+            ['DESTINATION', /^[a-zA-Z_\u0900-\u097F]+(?:\[[^\]]+\])?(?:-|\s*)मध्ये/],
+            ['NUMBER', /^[0-9०-९]+(?:\.[0-9०-९]+)?/],
+            ['ARRAY_ACCESS', /^[a-zA-Z_\u0900-\u097F]+\[[^\]]+\]/],
+            ['ID', /^[a-zA-Z_\u0900-\u097F]+/],
+            ['SKIP', /^[ \t\r]+/],
+            ['NEWLINE', /^\n/],
+            ['DOSHA', /^./]
+        ];
+        this.outputLog = [];
+		this.functions = {}; // NEW: Stores user-defined functions
+    }
+
+    tokenize(code) {
+        let tokens = [];
+        let pos = 0;
+        let currentLine = 1;
+        while (pos < code.length) {
+            let match = null;
+            let textSlice = code.slice(pos);
+            for (let [kind, regex] of this.specs) {
+                let m = regex.exec(textSlice);
+                if (m && m.index === 0) { match = { kind, val: m[0], line: currentLine }; break; }
+            }
+            if (!match) throw new Error(`व्याकरण दोषः (Syntax Error) near Line ${currentLine}`);
+            pos += match.val.length;
+            
+            if (match.kind === 'NEWLINE') currentLine++;
+            if (match.kind === 'SKIP' || match.kind === 'COMMENT') continue;
+
+            if (match.kind === 'NUMBER') {
+                let eng = match.val.replace(/[०-९]/g, d => '०१२३४५६७८९'.indexOf(d));
+                match.val = eng.includes('.') ? parseFloat(eng) : parseInt(eng, 10);
+            } 
+            if (match.kind === 'STRING') match.val = match.val.slice(1, -1);
+            
+            // Convert new Boolean/Null tokens
+            if (match.kind === 'SATYA') match.val = true;
+            if (match.kind === 'ASATYA') match.val = false;
+            if (match.kind === 'SHUNYA') match.val = null;
+            
+            tokens.push(match);
+        }
+        return tokens;
+    }
+
+            extractBlock(tokens, startIdx, openTok, closeTok) {
+                let block = [];
+                let depth = 0;
+                let i = startIdx;
+                let errorLine = tokens[startIdx]?.line || "Unknown";
+                
+                while (i < tokens.length && tokens[i].kind !== openTok) i++;
+                i++;
+                while (i < tokens.length) {
+                    if (tokens[i].kind === openTok) depth++;
+                    else if (tokens[i].kind === closeTok) {
+                        if (depth === 0) return { nextIdx: i + 1, block };
+                        depth--;
+                    }
+                    block.push(tokens[i]);
+                    i++;
+                }
+                throw new Error(`दोषः (Error): Missing closing structure starting around Line ${errorLine}`);
+            }
+
+            evaluateCondition(tokens, memory) {
+                let clean = tokens.filter(t => t.kind !== 'NEWLINE');
+                if (clean.length >= 3) {
+                    let left = ['NUMBER', 'STRING'].includes(clean[0].kind) ? clean[0].val : (memory[clean[0].val] || 0);
+                    let op = clean[1].val;
+                    let right = ['NUMBER', 'STRING'].includes(clean[2].kind) ? clean[2].val : (memory[clean[2].val] || 0);
+                    if (op === '==') return left == right;
+                    if (op === '!=') return left != right;
+                    if (op === '>') return parseFloat(left) > parseFloat(right);
+                    if (op === '<') return parseFloat(left) < parseFloat(right);
+                    if (op === '>=') return parseFloat(left) >= parseFloat(right);
+                    if (op === '<=') return parseFloat(left) <= parseFloat(right);
+                }
+                return false;
+            }
+
+	async executeKarakaLine(tokens, memory) {
+        if (!tokens.length) return;
+        
+        // --- SMART MEMORY READ ---
+        const getVal = (v) => {
+            if (['NUMBER', 'STRING', 'SATYA', 'ASATYA'].includes(v.kind)) return v.val;
+            if (v.kind === 'ARRAY_ACCESS') {
+                let match = v.val.match(/^([^\[]+)\[([^\]]+)\]$/);
+                let arr = match[1], idxRaw = match[2];
+                // Translate Sanskrit numbers to English, or use variable from memory
+                let engNum = idxRaw.replace(/[०-९]/g, d => '०१२३४५६७८९'.indexOf(d));
+                let idx = isNaN(parseInt(engNum)) ? (memory[idxRaw] || 0) : parseInt(engNum);
+                return memory[arr] ? memory[arr][idx] : 0;
+            }
+            return memory[v.val] || 0;
+        };
+
+        // --- SMART MEMORY WRITE ---
+        const setVal = (destToken, value) => {
+            let destRaw = destToken.val.replace(/(?:-|\s*)मध्ये/, '');
+            if (destRaw.includes('[')) {
+                let match = destRaw.match(/^([^\[]+)\[([^\]]+)\]$/);
+                let arr = match[1], idxRaw = match[2];
+                let engNum = idxRaw.replace(/[०-९]/g, d => '०१२३४५६७८९'.indexOf(d));
+                let idx = isNaN(parseInt(engNum)) ? (memory[idxRaw] || 0) : parseInt(engNum);
+                
+                if (!memory[arr]) memory[arr] = []; // Auto-create array if missing
+                memory[arr][idx] = value;
+            } else {
+                memory[destRaw] = value;
+            }
+        };
+        
+        let dest = tokens.find(t => t.kind === 'DESTINATION');
+        let vals = tokens.filter(t => ['NUMBER', 'STRING', 'ID', 'SATYA', 'ASATYA', 'ARRAY_ACCESS'].includes(t.kind) && t.kind !== 'DESTINATION');
+        let has = (k) => tokens.some(t => t.kind === k);
+
+        // --- FUNCTION CALL LOGIC (From previous step) ---
+        let funcNameToken = tokens.find(t => t.kind === 'ID' && this.functions && this.functions[t.val]);
+        if (funcNameToken) {
+            let funcDef = this.functions[funcNameToken.val];
+            let args = [];
+            
+            if (has('LPAREN') && has('RPAREN')) {
+                let startIdx = tokens.findIndex(t => t.kind === 'LPAREN');
+                let endIdx = tokens.findIndex(t => t.kind === 'RPAREN');
+                for(let j = startIdx + 1; j < endIdx; j++) {
+                    if(['NUMBER', 'STRING', 'ID', 'SATYA', 'ASATYA', 'ARRAY_ACCESS'].includes(tokens[j].kind)) {
+                        args.push(getVal(tokens[j]));
+                    }
+                }
+            }
+
+            let localMemory = { ...memory }; 
+            for(let a = 0; a < funcDef.params.length; a++) {
+                localMemory[funcDef.params[a]] = args[a] || 0;
+            }
+
+            let result = await this.runAst(funcDef.body, localMemory);
+
+            if (dest && result && result.isReturn) {
+                setVal(dest, result.value);
+            }
+            return; 
+        }
+        // -----------------------------------
+
+        if (has('PRICCHA') && dest) {
+            let userInput = await getTerminalInput(`> Enter value for '${dest.val.replace(/(?:-|\s*)मध्ये/, '')}':`);
+            let num = parseFloat(userInput);
+            setVal(dest, isNaN(num) ? userInput : num);
+        }
+        else if (has('STHAPAYA') && dest) { 
+            if (has('LBRACKET') && has('RBRACKET') && !dest.val.includes('[')) {
+                let startIdx = tokens.findIndex(t => t.kind === 'LBRACKET');
+                let endIdx = tokens.findIndex(t => t.kind === 'RBRACKET');
+                let arrayVals = [];
+                for(let j = startIdx + 1; j < endIdx; j++) {
+                    if(!['COMMA', 'SKIP', 'NEWLINE'].includes(tokens[j].kind)) {
+                        arrayVals.push(getVal(tokens[j]));
+                    }
+                }
+                setVal(dest, arrayVals);
+            } else if (vals.length) {
+                setVal(dest, getVal(vals[0])); 
+            }
+        }
+        else if (has('ADD') && dest && vals.length > 1) { 
+            let v1 = getVal(vals[0]), v2 = getVal(vals[1]);
+            setVal(dest, (typeof v1 === 'string') ? String(v1) + String(v2) : v1 + v2); 
+        }
+        else if (has('SUB') && dest && vals.length > 1) { setVal(dest, Number(getVal(vals[0])) - Number(getVal(vals[1]))); }
+        else if (has('MUL') && dest && vals.length > 1) { setVal(dest, Number(getVal(vals[0])) * Number(getVal(vals[1]))); }
+        else if (has('DIV') && dest && vals.length > 1) { 
+            let v1 = getVal(vals[0]), v2 = getVal(vals[1]);
+            setVal(dest, (Number(v2) === 0) ? "Error: Div by 0" : v1/v2); 
+        }
+        else if (has('MOD') && dest && vals.length > 1) {
+            let v2 = Number(getVal(vals[1]));
+            setVal(dest, (v2 === 0) ? "Error: Mod by 0" : Number(getVal(vals[0])) % v2);
+        }
+        else if (has('POW') && dest && vals.length > 1) {
+            setVal(dest, Math.pow(Number(getVal(vals[0])), Number(getVal(vals[1]))));
+        }
+        else if (has('VADA')) { 
+            const term = document.getElementById('terminal');
+            term.innerHTML += vals.map(v => getVal(v)).join("") + "\n";
+            term.scrollTop = term.scrollHeight; 
+        }
+    }
+
+    async runAst(tokens, memory) {
+        let i = 0;
+        const term = document.getElementById('terminal');
+        
+        while (i < tokens.length) {
+            let kind = tokens[i].kind;
+            if (kind === 'NEWLINE') { i++; continue; }
+			
+			// 1. HANDLE FUNCTION DECLARATION
+            if (kind === 'KARYA') {
+                let funcNameToken = tokens[i + 1];
+                if (!funcNameToken || funcNameToken.kind !== 'ID') throw new Error("व्याकरण दोषः: Function name missing after 'कार्य'.");
+                
+                let parenBlock = this.extractBlock(tokens, i + 1, 'LPAREN', 'RPAREN');
+                let bodyBlock = this.extractBlock(tokens, parenBlock.nextIdx, 'LBRACE', 'RBRACE');
+                
+                // Extract parameter names (e.g., "अ", "ब")
+                let params = parenBlock.block.filter(t => t.kind === 'ID').map(t => t.val);
+                
+                // Save it to the registry
+                this.functions[funcNameToken.val] = { params: params, body: bodyBlock.block };
+                
+                i = bodyBlock.nextIdx;
+                continue;
+            }
+
+            // 2. HANDLE RETURN STATEMENT
+            if (kind === 'PRATIPHAL') {
+                let retVal = null;
+                // Check if there is a value to return next (like a number, string, or variable)
+                if (i + 1 < tokens.length && ['NUMBER', 'STRING', 'SATYA', 'ASATYA', 'ID'].includes(tokens[i+1].kind)) {
+                    let t = tokens[i+1];
+                    retVal = ['NUMBER', 'STRING', 'SATYA', 'ASATYA'].includes(t.kind) ? t.val : (memory[t.val] || 0);
+                    i++; // Skip the value token
+                }
+                return { isReturn: true, value: retVal };
+            }
+
+            if (kind === 'YADI') {
+                let cond = this.extractBlock(tokens, i, 'LPAREN', 'RPAREN');
+                let trueBlock = this.extractBlock(tokens, cond.nextIdx, 'LBRACE', 'RBRACE');
+                let falseBlock = [];
+                let lookahead = trueBlock.nextIdx;
+                while (lookahead < tokens.length && tokens[lookahead].kind === 'NEWLINE') lookahead++;
+                if (lookahead < tokens.length && tokens[lookahead].kind === 'TARHI') {
+                    let fb = this.extractBlock(tokens, lookahead + 1, 'LBRACE', 'RBRACE');
+                    falseBlock = fb.block;
+                    i = fb.nextIdx;
+                } else { i = trueBlock.nextIdx; }
+                
+                // --- UPDATED RETURN LOGIC ---
+                if (this.evaluateCondition(cond.block, memory)) {
+                    let res = await this.runAst(trueBlock.block, memory);
+                    if (res && res.isReturn) return res;
+                } else if (falseBlock.length) {
+                    let res = await this.runAst(falseBlock, memory);
+                    if (res && res.isReturn) return res;
+                }
+                // ----------------------------
+                continue;
+            }
+
+            if (kind === 'YAVAT') {
+                let cond = this.extractBlock(tokens, i, 'LPAREN', 'RPAREN');
+                let loopBlock = this.extractBlock(tokens, cond.nextIdx, 'LBRACE', 'RBRACE');
+                let safety = 0;
+                
+                // --- UPDATED RETURN LOGIC ---
+                while (this.evaluateCondition(cond.block, memory) && safety < 2000) {
+                    let res = await this.runAst(loopBlock.block, memory);
+                    if (res && res.isReturn) return res;
+                    safety++;
+                }
+                // ----------------------------
+                
+                if(safety >= 2000) term.innerHTML += `[System Warning] Infinite loop prevented.\n`;
+                i = loopBlock.nextIdx;
+                continue;
+            }
+            
+            if (kind === 'KURU') {
+                let loopBlock = this.extractBlock(tokens, i, 'LBRACE', 'RBRACE');
+                let lookahead = loopBlock.nextIdx;
+                while (lookahead < tokens.length && tokens[lookahead].kind === 'NEWLINE') lookahead++;
+                
+                if (lookahead < tokens.length && tokens[lookahead].kind === 'YAVAT') {
+                    let cond = this.extractBlock(tokens, lookahead + 1, 'LPAREN', 'RPAREN');
+                    let safety = 0;
+                    
+                    // --- UPDATED RETURN LOGIC ---
+                    do {
+                        let res = await this.runAst(loopBlock.block, memory);
+                        if (res && res.isReturn) return res;
+                        safety++;
+                        if(safety >= 2000) break;
+                    } while (this.evaluateCondition(cond.block, memory));
+                    // ----------------------------
+                    
+                    if (safety >= 2000) term.innerHTML += "[System Warning] Infinite do-while loop prevented.\n";
+                    i = cond.nextIdx;
+                } else {
+                    throw new Error("व्याकरण दोषः (Syntax Error): 'कुरु' (do) requires a matching 'यावत्' (while) condition.");
+                }
+                continue;
+            }
+
+            if (kind === 'KRITE') {
+                let parenBlock = this.extractBlock(tokens, i, 'LPAREN', 'RPAREN');
+                let bodyBlock = this.extractBlock(tokens, parenBlock.nextIdx, 'LBRACE', 'RBRACE');
+                
+                let parts = [];
+                let current = [];
+                for (let t of parenBlock.block) {
+                    if (t.kind === 'SEMI') { parts.push(current); current = []; } 
+                    else { current.push(t); }
+                }
+                parts.push(current);
+                
+                if (parts.length === 3) {
+                    let [initTokens, condTokens, stepTokens] = parts;
+                    await this.executeKarakaLine(initTokens, memory);
+                    let safety = 0;
+                    
+                    // --- UPDATED RETURN LOGIC ---
+                    while (this.evaluateCondition(condTokens, memory) && safety < 2000) {
+                        let res = await this.runAst(bodyBlock.block, memory);
+                        if (res && res.isReturn) return res;
+                        await this.executeKarakaLine(stepTokens, memory);
+                        safety++;
+                    }
+                    // ----------------------------
+                    
+                    if (safety >= 2000) term.innerHTML += "[System Warning] Infinite for loop prevented.\n";
+                } else {
+                    throw new Error("व्याकरण दोषः (Syntax Error): 'कृते' (for) requires exactly 3 parts separated by semicolons.");
+                }
+                i = bodyBlock.nextIdx;
+                continue;
+            }
+
+            let lineTokens = [];
+            while (i < tokens.length && !['NEWLINE', 'LBRACE', 'RBRACE'].includes(tokens[i].kind)) { lineTokens.push(tokens[i]); i++; }
+            await this.executeKarakaLine(lineTokens, memory);
+			}
+		}
+    
+
+    async execute(code) {
+        const term = document.getElementById('terminal');
+        term.innerHTML = "System Ready...\n-----------------\n"; 
+        try {
+            let tokens = this.tokenize(code);
+            await this.runAst(tokens, {});
+            term.innerHTML += "\n<span style='color: #4CAF50;'>[Program Finished]</span>\n";
+        } catch (e) {
+            term.innerHTML += `\n<span class="error">${e.message}</span>\n`;
+        }
+        term.scrollTop = term.scrollHeight;
+    }
+        }
+
+// ==========================================
+        // ASYNC TERMINAL INPUT HELPER
+        // ==========================================
+        function getTerminalInput(promptMsg) {
+            return new Promise((resolve) => {
+                const term = document.getElementById('terminal');
+                const inputId = 'term_input_' + Date.now();
+                
+                // Inject the prompt and a styled input field directly into the terminal
+                term.innerHTML += `<span>${promptMsg} </span><input type="text" id="${inputId}" autocomplete="off" style="background: transparent; border: none; border-bottom: 1px dashed #00FF00; color: #00FF00; outline: none; font-family: 'Consolas', monospace; font-size: 15px; width: 150px;">\n`;
+                term.scrollTop = term.scrollHeight; // Auto-scroll to bottom
+                
+                const inputEl = document.getElementById(inputId);
+                inputEl.focus();
+                
+                inputEl.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        const val = inputEl.value;
+                        // Replace the input box with plain text to lock it in the terminal history
+                        inputEl.outerHTML = val + '\n';
+                        resolve(val || "0");
+                    }
+                });
+            });
+        }
+
+        const engine = new SanskritEngine();
+
+		async function runCode() {
+            if(!editorInstance) return;
+            const term = document.getElementById('terminal');
+            term.innerHTML = "Executing...\n";
+            
+            // Execute the code asynchronously
+            await engine.execute(editorInstance.getValue());
+        }
+
+        
+		// Wandbox API: Highly stable, CORS-friendly, keyless public C++ compiler
+        async function compileCPP() {
+            const code = document.getElementById('cppCode').value;
+            const out = document.getElementById('cppOutput');
+            
+            out.innerHTML = "<span style='color: yellow;'>Connecting to Wandbox API (G++)...<br>Compiling...</span>";
+            
+            try {
+                const response = await fetch('https://wandbox.org/api/compile.json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        compiler: "gcc-head", // Always uses the latest available G++ version
+                        code: code,
+                        save: false
+                    })
+                });
+                
+                if (!response.ok) throw new Error("API Overloaded or Unavailable");
+                
+                const data = await response.json();
+                
+                // Wandbox returns status "0" for success
+                if (data.status === "0") {
+                    out.innerText = data.program_message || "Success: Program finished with no output.";
+                } else {
+                    out.innerHTML = `<span style='color: #FF5555;'>C++ Compiler Error:\n${data.compiler_error || data.program_message || "Unknown error"}</span>`;
+                }
+            } catch (e) {
+                out.innerHTML = `<span style='color: #FF5555;'>Network Error: Could not connect to public compiler API.\nDetails: ${e.message}</span>`;
+            }
+        }
+		
+		
+		// ==========================================
+        // 4. TRANSPILER MODAL LOGIC
+        // ==========================================
+        function openWand() { document.getElementById('wandModal').style.display = 'flex'; }
+        
+        function transpileCode() {
+            let code = document.getElementById('cppCode').value;
+            code = code.replace(/#include\s*<.*?>\n?/g, '').replace(/using\s+namespace\s+std\s*;\n?/g, '').replace(/(int|void)\s+main\s*\(\)\s*\{/g, '').replace(/return\s+0\s*;/g, '');
+            let lastBrace = code.lastIndexOf('}');
+            if (lastBrace !== -1) code = code.substring(0, lastBrace) + code.substring(lastBrace + 1);
+
+            let outLines = [];
+            for (let line of code.split('\n')) {
+                if (!line.trim()) continue;
+                line = line.replace(/cout\s*<<\s*(.*?);/g, (m, p1) => 'वद ' + p1.replace(/<</g, ' ').replace(/endl/g, '').trim());
+                line = line.replace(/cin\s*>>\s*([a-zA-Z0-9_]+)\s*;/g, 'पृच्छ $1-मध्ये');
+                line = line.replace(/if\s*\((.*?)\)/g, 'यदि ( $1 )').replace(/else/g, 'तर्हि').replace(/while\s*\((.*?)\)/g, 'यावत् ( $1 )');
+                
+                let matches = [...line.matchAll(/([a-zA-Z_]\w*)\s*=\s*("[^"]*"|[a-zA-Z0-9_.]+)/g)];
+                if (matches.length > 0 && !line.includes('==')) line = matches.map(m => `${m[2]} ${m[1]}-मध्ये स्थापय`).join('\n');
+                outLines.push(line);
+            }
+            document.getElementById('wandModal').style.display = 'none';
+            if(editorInstance) editorInstance.setValue(outLines.join('\n').trim());
+        }
+
+        // Keyboard Shortcut run
+        document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); } });
+    // ==========================================
+        // AI ASSISTANT LOGIC
+        // ==========================================
+        function openAIModal() { 
+            document.getElementById('aiModal').style.display = 'flex'; 
+            document.getElementById('aiPrompt').value = '';
+            document.getElementById('aiOutput').style.display = 'none';
+        }
+
+async function generateAICode() {
+            const userText = document.getElementById('aiPrompt').value.trim();
+            if (!userText) return;
+
+            const out = document.getElementById('aiOutput');
+            const btn = document.getElementById('aiRunBtn');
+            
+            out.style.display = 'block';
+            out.innerHTML = "<span style='color: yellow;'>🧠 AI is thinking... Please wait.</span>";
+            btn.disabled = true;
+
+            const systemPrompt = `You are a code generator for the Panini Sanskrit programming language.
+Write code for this request: "${userText}"
+
+RULES:
+1. ONLY output raw Panini code and // comments explaining the steps.
+2. DO NOT use markdown code blocks like \`\`\`.
+3. NO English programming words (no if, else, print, int, var).
+
+PANINI SYNTAX CHEATSHEET:
+- Print: वद "text" or वद var
+- Ask User: पृच्छ var-मध्ये
+- Assign Value: 10 var-मध्ये स्थापय
+- Add: a b res-मध्ये संयोजय
+- Modulo (Remainder): a b res-मध्ये शेष
+- If Statement: यदि ( a == b ) { ... }
+- Else Statement: तर्हि { ... }
+- While Loop: यावत् ( a < 10 ) { ... }`;
+
+            try {
+                const response = await fetch('https://eprashala-proxy-511804777001.asia-south1.run.app/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: systemPrompt })
+                });
+                
+                if (!response.ok) throw new Error("API Unavailable");
+                
+                const data = await response.json();
+                
+                // 1. THE FIX: Robust JSON Extraction
+                let generatedCode = "";
+                
+                // Check if it's the raw Gemini format: data.candidates[0].content.parts[0].text
+                if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+                    generatedCode = data.candidates[0].content.parts[0].text;
+                } 
+                // Check standard proxy formats
+                else if (data.text) { 
+                    generatedCode = data.text; 
+                } 
+                else if (data.response) { 
+                    generatedCode = data.response; 
+                } 
+                else if (typeof data === 'string') { 
+                    generatedCode = data; 
+                } 
+                else {
+                    // Fallback: If we still can't find it, print the raw JSON so we can debug the exact structure!
+                    generatedCode = "// UNKNOWN API FORMAT RETURNED:\n" + JSON.stringify(data, null, 2);
+                }
+
+                // Clean up any rogue markdown tags the AI might try to output
+                generatedCode = generatedCode.replace(/^\`\`\`[a-zA-Z]*\n/gm, '').replace(/\`\`\`$/gm, '').trim();
+
+                // 2. THE FIX: Wipe and replace the entire editor content
+                if (editorInstance) {
+                    editorInstance.setValue("// --- AI Generated Logic ---\n\n" + generatedCode);
+                    
+                    document.getElementById('aiModal').style.display = 'none';
+                    editorInstance.focus();
+                }
+            } catch (e) {
+                out.innerHTML = `<span style='color: #FF5555;'>API Error: Could not connect to proxy endpoint.\nDetails: ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+	
+
+	
+	    // ==========================================
+        // THEME TOGGLE LOGIC
+        // ==========================================
+        let currentTheme = localStorage.getItem('paniniTheme') || 'dark';
+        
+        function applyTheme(theme) {
+            const btn = document.getElementById('themeBtn');
+            const term = document.getElementById('terminal');
+            
+            if (theme === 'ancient') {
+                document.body.classList.add('theme-ancient');
+                if (btn) btn.innerHTML = '📜 Ancient Mode';
+                if (editorInstance) monaco.editor.setTheme('panini-ancient');
+                if (term) term.style.color = '#3E2723'; // Dark ink for terminal output
+            } else {
+                document.body.classList.remove('theme-ancient');
+                if (btn) btn.innerHTML = '🌙 Dark Mode';
+                if (editorInstance) monaco.editor.setTheme('panini-dark');
+                if (term) term.style.color = '#00FF00'; // Matrix green for terminal output
+            }
+            localStorage.setItem('paniniTheme', theme);
+            currentTheme = theme;
+        }
+
+        function toggleTheme() {
+            applyTheme(currentTheme === 'dark' ? 'ancient' : 'dark');
+        }
+
+        // Apply theme immediately on load
+        window.addEventListener('DOMContentLoaded', () => {
+            applyTheme(currentTheme);
+        });
+		
+		
+	    // ==========================================
+        // PWA SERVICE WORKER REGISTRATION
+        // ==========================================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./paninisw.js')
+                    .then((registration) => {
+                        console.log('Panini PWA ServiceWorker registered with scope:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.error('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+	
+	// Re-calculate editor dimensions on screen rotate or zoom
+        window.addEventListener('resize', () => {
+            if (editorInstance) {
+                editorInstance.layout();
+            }
+        });
+	// ==========================================
+        // DRAG TO RESIZE PANE LOGIC (Mouse & Touch)
+        // ==========================================
+        const resizer = document.getElementById('drag-resizer');
+        const leftPane = document.getElementById('editor-pane');
+        const rightPane = document.getElementById('terminal-pane');
+        const workspace = document.getElementById('workspace');
+        
+        let isResizing = false;
+        let isDesktopLayout = window.innerWidth >= 768 || window.matchMedia("(orientation: landscape)").matches;
+
+        const startResize = (e) => {
+            isResizing = true;
+            isDesktopLayout = window.innerWidth >= 768 || window.matchMedia("(orientation: landscape)").matches;
+            document.body.style.cursor = isDesktopLayout ? 'col-resize' : 'row-resize';
+            document.body.style.userSelect = 'none'; // Prevent text highlighting while dragging
+			leftPane.style.pointerEvents = 'none';
+            rightPane.style.pointerEvents = 'none';
+        };
+
+        const doResize = (e) => {
+            if (!isResizing) return;
+            
+            // Get mouse or touch coordinates
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const rect = workspace.getBoundingClientRect();
+
+            if (isDesktopLayout) {
+                // Horizontal Dragging (Desktop / Landscape)
+                const x = clientX - rect.left;
+                let percent = (x / rect.width) * 100;
+                
+                // Prevent shrinking too far (lock bounds between 15% and 85%)
+                if (percent < 15) percent = 15;
+                if (percent > 85) percent = 85;
+                
+                leftPane.style.flex = `0 0 ${percent}%`;
+                rightPane.style.flex = `1 1 0%`; // Terminal takes remaining space
+            } else {
+                // Vertical Dragging (Mobile Portrait)
+                const y = clientY - rect.top;
+                let percent = (y / rect.height) * 100;
+                
+                if (percent < 15) percent = 15;
+                if (percent > 85) percent = 85;
+                
+                leftPane.style.flex = `0 0 ${percent}%`;
+                rightPane.style.flex = `1 1 0%`;
+            }
+            
+        };
+
+        const stopResize = () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = 'default';
+                document.body.style.userSelect = 'auto';
+				leftPane.style.pointerEvents = 'auto';
+                rightPane.style.pointerEvents = 'auto';
+            }
+        };
+
+        // Attach Mouse Events
+        resizer.addEventListener('mousedown', startResize);
+        document.addEventListener('mousemove', doResize);
+        document.addEventListener('mouseup', stopResize);
+
+        // Attach Touch Events for Mobile
+        resizer.addEventListener('touchstart', startResize, { passive: true });
+        document.addEventListener('touchmove', doResize, { passive: true });
+        document.addEventListener('touchend', stopResize);
+	
+	</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"ec353805b5444c4aaebf5721549d6bc7","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
